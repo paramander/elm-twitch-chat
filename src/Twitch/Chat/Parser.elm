@@ -157,7 +157,8 @@ badge =
             string b *> char '/' *> many1 int
     in
         choice
-            [ badgeParser "staff" $> Staff
+            [ badgeParser "broadcaster" $> Broadcaster
+            , badgeParser "staff" $> Staff
             , badgeParser "admin" $> Admin
             , badgeParser "global_mod" $> GlobalMod
             , badgeParser "moderator" $> Moderator

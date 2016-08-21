@@ -29,7 +29,8 @@ type Tag
 
 
 type Badge
-    = Staff
+    = Broadcaster
+    | Staff
     | Admin
     | GlobalMod
     | Moderator

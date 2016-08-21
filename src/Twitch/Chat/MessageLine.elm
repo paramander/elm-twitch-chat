@@ -190,3 +190,7 @@ viewBadges badgeResponse badges =
             Staff :: rest ->
                 badgeHtml badgeResponse.staff.image
                     :: viewBadges badgeResponse rest
+
+            Broadcaster :: rest ->
+                badgeHtml badgeResponse.broadcaster.image
+                    :: viewBadges badgeResponse rest
