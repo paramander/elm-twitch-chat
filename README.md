@@ -6,7 +6,29 @@ chat. Recently, Twitch has upgraded their chat servers to also support
 WebSockets.
 
 
-## Setup
+## Features
+
+[*] Receiving messages
+[*] Sending messages
+[*] Emotes
+[*] Subscriber badges
+[*] Turbo badges
+[*] Mod badges
+[*] Global mod badges
+[*] Admin badges
+[*] Staff badges
+[] Broadcaster badges
+[] Bits badges (wrong implementation, will have to use the new [badges.twitch.tv](https://badges.twitch.tv) endpoint)
+[] Cheers
+[] Resubscribe notices
+[] Subscribe notices
+[] Timeout/ban actions
+[] `/me` actions
+[] Emote picker
+[] Viewer list
+[] `@` tagging
+
+## Try it out
 
 The whole setup is automated using `npm`. Make sure you have `node` > 4 and `npm` installed.
 
