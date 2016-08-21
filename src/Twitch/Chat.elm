@@ -194,6 +194,16 @@ update msg model =
                                 }
                                     ! [ scrollChat () ]
 
+                            Resubscription tags channel mContent ->
+                                { model
+                                    | messages =
+                                        model.messages
+                                            ++ [ MessageLine.viewResub model.mBadges tags channel mContent ]
+                                            |> dropMessagesIfNeeded
+                                            |> List.take 100
+                                }
+                                    ! [ scrollChat () ]
+
                             Ping content ->
                                 model
                                     ! [ WebSocket.send model.receiveWsUrl ("PONG " ++ content) ]
@@ -233,7 +243,8 @@ update msg model =
                 joinCommands ip =
                     Cmd.batch
                         [ WebSocket.send ip <| "JOIN #" ++ model.channelName
-                        , WebSocket.send ip "CAP REQ :twitch.tv/tags :twitch.tv/commands"
+                        , WebSocket.send ip "CAP REQ :twitch.tv/tags"
+                        , WebSocket.send ip "CAP REQ :twitch.tv/commands"
                         , WebSocket.send ip <| "NICK " ++ model.username
                         , WebSocket.send ip <| "PASS " ++ model.oauth
                         ]

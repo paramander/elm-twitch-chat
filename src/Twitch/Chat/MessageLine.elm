@@ -31,6 +31,51 @@ viewMessage badgeResponse tags user content =
         ]
 
 
+viewResub : Maybe Badges -> List Tag -> Channel -> Maybe String -> Html a
+viewResub badgeResponse tags channel mContent =
+    div
+        [ class "message-line chat-line special-message"
+        , style Css.resubMessageStyle
+        ]
+        <| systemMessage tags
+        :: case mContent of
+            Nothing ->
+                [ text "" ]
+
+            Just content ->
+                [ Maybe.map (badges tags) badgeResponse
+                    |> Maybe.withDefault (text "")
+                , span
+                    [ class "from"
+                    , style <| Css.fromStyle tags
+                    ]
+                    [ chatFrom tags "" ]
+                , colon
+                , span
+                    [ class "content"
+                    , style Css.chatContentStyle
+                    ]
+                    <| chatContent tags content
+                ]
+
+
+systemMessage : List Tag -> Html a
+systemMessage tags =
+    case tags of
+        [] ->
+            text ""
+
+        (System message) :: _ ->
+            div
+                [ class "system-msg"
+                , style Css.systemMessageStyle
+                ]
+                [ text message ]
+
+        _ :: rest ->
+            systemMessage rest
+
+
 colon : Html a
 colon =
     span

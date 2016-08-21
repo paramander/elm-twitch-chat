@@ -68,6 +68,7 @@ message =
     choice
         [ privMessage
         , pingMessage
+        , resubMessage
         ]
 
 
@@ -82,13 +83,24 @@ pingMessage =
 privMessage : Parser Message
 privMessage =
     succeed PrivateMessage
-        <*> tags
+        <*> privMsgTags
         <*> commandPrefix
         <* string "PRIVMSG "
         <*> channel
         <* space
         <* char ':'
         <*> rest
+
+
+resubMessage : Parser Message
+resubMessage =
+    succeed Resubscription
+        <*> userStateTags
+        <* string ":tmi.twitch.tv"
+        <* space
+        <* string "USERNOTICE "
+        <*> channel
+        <*> maybe (space <* char ':' *> rest)
 
 
 nickname : Parser String
@@ -120,13 +132,18 @@ commandPrefix =
         <* space
 
 
-tags : Parser (List Tag)
-tags =
-    manyTill tag (char ' ')
+privMsgTags : Parser (List Tag)
+privMsgTags =
+    manyTill privMsgTag (char ' ')
 
 
-tag : Parser Tag
-tag =
+userStateTags : Parser (List Tag)
+userStateTags =
+    manyTill userStateTag (char ' ')
+
+
+privMsgTag : Parser Tag
+privMsgTag =
     badges
         <|> bits
         <|> color
@@ -139,6 +156,15 @@ tag =
         <|> turbo
         <|> userId
         <|> userType
+
+
+userStateTag : Parser Tag
+userStateTag =
+    privMsgTag
+        <|> msgId
+        <|> msgParamMonths
+        <|> systemMsg
+        <|> login
 
 
 badges : Parser Tag
@@ -301,3 +327,38 @@ userType =
             *> char '='
             *> maybe (choice userTypes)
             <$> UserType
+
+
+systemMsg : Parser Tag
+systemMsg =
+    string "system-msg"
+        *> char '='
+        *> manyTill anyChar (char ';')
+        <$> (String.fromList >> String.split "\\s" >> String.join " " >> System)
+
+
+login : Parser Tag
+login =
+    string "login"
+        *> char '='
+        *> username
+        <* char ';'
+        <$> always None
+
+
+msgId : Parser Tag
+msgId =
+    string "msg-id"
+        *> char '='
+        *> string "resub"
+        <* char ';'
+        <$> always None
+
+
+msgParamMonths : Parser Tag
+msgParamMonths =
+    string "msg-param-months"
+        *> char '='
+        *> int
+        <* char ';'
+        <$> always None

@@ -6,8 +6,8 @@ parsed. JOINs, SERVERMSG and JTV messages are not processed to.
 -}
 type Message
     = PrivateMessage (List Tag) User Channel String
+    | Resubscription (List Tag) Channel (Maybe String)
     | Ping String
-    -- | JoinMessage User Channel
     -- | ServerMessage (Maybe Channel) Int String
     -- | JtvCommand Command String
     -- | JtvMode User Channel Mode
@@ -26,6 +26,8 @@ type Tag
     | TurboTag Bool
     | UserId Int
     | UserType (Maybe String)
+    | System String
+    | None
 
 
 type Badge

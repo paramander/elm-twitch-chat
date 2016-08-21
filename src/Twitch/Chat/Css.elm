@@ -157,6 +157,19 @@ privateMessageStyle =
     ]
 
 
+resubMessageStyle : List ( String, String )
+resubMessageStyle =
+    privateMessageStyle
+        ++ [ ( "background-color", "#e5e3e8" )
+           , ( "box-shadow", "3px 0 0 #6441a4 inset" )
+           ]
+
+
+systemMessageStyle : List ( String, String )
+systemMessageStyle =
+    [ ( "color", "#a49fad" ) ]
+
+
 badgeStyle : List ( String, String )
 badgeStyle =
     [ ( "float", "left" )
