@@ -157,14 +157,14 @@ badge =
             string b *> char '/' *> many1 int
     in
         choice
-            [ badgeParser "broadcaster" $> Broadcaster
-            , badgeParser "staff" $> Staff
-            , badgeParser "admin" $> Admin
-            , badgeParser "global_mod" $> GlobalMod
-            , badgeParser "moderator" $> Moderator
+            [ badgeParser "subscriber" $> Subscriber
             , badgeParser "turbo" $> Turbo
-            , badgeParser "subscriber" $> Subscriber
+            , badgeParser "moderator" $> Moderator
             , string "bits" *> char '/' *> int <$> Bits
+            , badgeParser "admin" $> Admin
+            , badgeParser "staff" $> Staff
+            , badgeParser "global_mod" $> GlobalMod
+            , badgeParser "broadcaster" $> Broadcaster
             ]
 
 
