@@ -8,25 +8,25 @@ WebSockets.
 
 ## Features
 
-[*] Receiving messages
-[*] Sending messages
-[*] Emotes
-[*] Subscriber badges
-[*] Turbo badges
-[*] Mod badges
-[*] Global mod badges
-[*] Admin badges
-[*] Staff badges
-[] Broadcaster badges
-[] Bits badges (wrong implementation, will have to use the new [badges.twitch.tv](https://badges.twitch.tv) endpoint)
-[] Cheers
-[] Resubscribe notices
-[] Subscribe notices
-[] Timeout/ban actions
-[] `/me` actions
-[] Emote picker
-[] Viewer list
-[] `@` tagging
+- [x] Receiving messages
+- [x] Sending messages
+- [x] Emotes
+- [x] Subscriber badges
+- [x] Turbo badges
+- [x] Mod badges
+- [x] Global mod badges
+- [x] Admin badges
+- [x] Staff badges
+- [ ] Broadcaster badges
+- [ ] Bits badges (wrong implementation, will have to use the new [badges.twitch.tv](https://badges.twitch.tv) endpoint)
+- [ ] Cheers
+- [ ] Resubscribe notices
+- [ ] Subscribe notices
+- [ ] Timeout/ban actions
+- [ ] `/me` actions
+- [ ] Emote picker
+- [ ] Viewer list
+- [ ] `@` tagging
 
 ## Try it out
 
