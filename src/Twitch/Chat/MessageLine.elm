@@ -4,7 +4,7 @@ import Dict
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import String
-import Twitch.Chat.Badges exposing (Badges, BadgeSets)
+import Twitch.Chat.Badges exposing (Badges, BadgeSets, BadgeProperties)
 import Twitch.Chat.Css as Css
 import Twitch.Chat.Types exposing (Message(..), User, Channel, Tag(..), Badge(..), Emote)
 
@@ -123,23 +123,38 @@ spanContentWithEmotes len emotes content =
 viewBadges : BadgeSets -> List Badge -> List (Html a)
 viewBadges badgeSets badges =
     let
-        badgeHtml url =
+        badgeHtml : BadgeProperties -> Html a
+        badgeHtml properties =
             span
-                [ class "badge-wrapper"
-                , style Css.badgeStyle
+                [ class "balloon-wrapper"
+                , style Css.balloonWrapperStyle
                 ]
                 [ img
                     [ class "badge"
                     , style Css.badgeImgStyle
-                    , src url
+                    , src properties.imageUrl1x
+                    , srcset
+                        [ properties.imageUrl2x ++ " 2x"
+                        , properties.imageUrl4x ++ " 4x"
+                        ]
                     ]
                     []
+                , div
+                    [ class "ballon balloon--tooltip"
+                    , style Css.balloonTooltipStyle
+                    ]
+                    [ text properties.title ]
                 ]
 
-        getBadgeUrl version versions =
+        srcset : List String -> Attribute a
+        srcset =
+            String.join ", "
+                >> attribute "srcset"
+
+        getBadgeVersion version versions =
             Dict.get version versions
-                |> Maybe.map .imageUrl2x
-                |> Maybe.withDefault ""
+                |> Maybe.map badgeHtml
+                |> Maybe.withDefault (text "")
     in
         case badges of
             [] ->
@@ -147,51 +162,51 @@ viewBadges badgeSets badges =
 
             Subscriber :: rest ->
                 badgeSets.subscriber
-                    |> Maybe.map (getBadgeUrl "1" >> badgeHtml)
+                    |> Maybe.map (getBadgeVersion "1")
                     |> Maybe.withDefault (text "")
                     |> flip (::) (viewBadges badgeSets rest)
 
             Turbo :: rest ->
-                badgeHtml (getBadgeUrl "1" badgeSets.turbo)
+                getBadgeVersion "1" badgeSets.turbo
                     :: viewBadges badgeSets rest
 
             Moderator :: rest ->
-                badgeHtml (getBadgeUrl "1" badgeSets.mod)
+                getBadgeVersion "1" badgeSets.mod
                     :: viewBadges badgeSets rest
 
             GlobalMod :: rest ->
-                badgeHtml (getBadgeUrl "1" badgeSets.globalMod)
+                getBadgeVersion "1" badgeSets.globalMod
                     :: viewBadges badgeSets rest
 
             (Bits bits) :: rest ->
                 let
-                    url =
+                    bitsHtml =
                         if bits > 99999 then
-                            getBadgeUrl "100000" badgeSets.bits
+                            getBadgeVersion "100000" badgeSets.bits
                         else if bits > 9999 then
-                            getBadgeUrl "10000" badgeSets.bits
+                            getBadgeVersion "10000" badgeSets.bits
                         else if bits > 4999 then
-                            getBadgeUrl "5000" badgeSets.bits
+                            getBadgeVersion "5000" badgeSets.bits
                         else if bits > 999 then
-                            getBadgeUrl "1000" badgeSets.bits
+                            getBadgeVersion "1000" badgeSets.bits
                         else if bits > 99 then
-                            getBadgeUrl "100" badgeSets.bits
+                            getBadgeVersion "100" badgeSets.bits
                         else
-                            getBadgeUrl "1" badgeSets.bits
+                            getBadgeVersion "1" badgeSets.bits
                 in
-                    badgeHtml url
+                    bitsHtml
                         :: viewBadges badgeSets rest
 
             Admin :: rest ->
-                badgeHtml (getBadgeUrl "1" badgeSets.admin)
+                getBadgeVersion "1" badgeSets.admin
                     :: viewBadges badgeSets rest
 
             Staff :: rest ->
-                badgeHtml (getBadgeUrl "1" badgeSets.staff)
+                getBadgeVersion "1" badgeSets.staff
                     :: viewBadges badgeSets rest
 
             Broadcaster :: rest ->
-                badgeHtml (getBadgeUrl "1" badgeSets.broadcaster)
+                getBadgeVersion "1" badgeSets.broadcaster
                     :: viewBadges badgeSets rest
 
 

@@ -11,7 +11,7 @@ containerStyles =
     , ( "height", "100%" )
     , ( "position", "relative" )
     , ( "min-width", "250px" )
-    , ( "font-family", "Helvetica Neue, Helvetica, sans-serif")
+    , ( "font-family", "Helvetica Neue, Helvetica, sans-serif" )
     ]
 
 
@@ -209,4 +209,33 @@ emoteStyle =
     , ( "vertical-align", "middle" )
     , ( "margin", "-5px 0" )
     , ( "border", "0" )
+    ]
+
+
+balloonWrapperStyle : List ( String, String )
+balloonWrapperStyle =
+    [ ( "position", "relative" )
+    , ( "float", "left" )
+    ]
+
+
+balloonTooltipStyle : List ( String, String )
+balloonTooltipStyle =
+    [ ( "left", "50px" )
+    , ( "trasnform", "translateX(-50%)" )
+    , ( "background-color", "#0e0c13" )
+    , ( "color", "white" )
+    , ( "padding", "3px 6px" )
+    , ( "white-space", "nowrap" )
+    , ( "box-shadow", "none" )
+    , ( "top", "100%" )
+    , ( "margin-top", "6px" )
+    , ( "border-radius", "1px" )
+    , ( "display", "none" )
+    , ( "font-size", "12px" )
+    , ( "line-height", "15px" )
+    , ( "text-align", "left" )
+    , ( "position", "absolute" )
+    , ( "z-index", "99999" )
+    , ( "box-sizing", "border-box" )
     ]
