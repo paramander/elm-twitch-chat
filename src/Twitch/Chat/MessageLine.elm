@@ -59,6 +59,20 @@ viewResub badgeResponse tags channel mContent =
                 ]
 
 
+viewSub : String -> Html a
+viewSub content =
+    div
+        [ class "message special-message"
+        , style Css.resubMessageStyle
+        ]
+        [ div
+            [ class "system-msg"
+            , style Css.systemMessageStyle
+            ]
+            [ text content ]
+        ]
+
+
 systemMessage : List Tag -> Html a
 systemMessage tags =
     case tags of

@@ -204,6 +204,14 @@ update msg model =
                                 }
                                     ! [ scrollChat () ]
 
+                            Subscription channel content ->
+                                { model
+                                    | messages =
+                                        model.messages
+                                            ++ [ MessageLine.viewSub content ]
+                                }
+                                    ! [ scrollChat () ]
+
                             Ping content ->
                                 model
                                     ! [ WebSocket.send model.receiveWsUrl ("PONG " ++ content) ]

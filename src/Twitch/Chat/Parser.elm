@@ -69,6 +69,7 @@ message =
         [ privMessage
         , pingMessage
         , resubMessage
+        , subMessage
         ]
 
 
@@ -101,6 +102,19 @@ resubMessage =
         <* string "USERNOTICE "
         <*> channel
         <*> maybe (space <* char ':' *> rest)
+
+
+-- ":twitchnotify!twitchnotify@twitchnotify.tmi.twitch.tv PRIVMSG #lirik :LegalizeDragonDildos just subscribed!\r\n"
+subMessage : Parser Message
+subMessage =
+    succeed Subscription
+        <* string ":twitchnotify!twitchnotify@twitchnotify.tmi.twitch.tv"
+        <* space
+        <* string "PRIVMSG "
+        <*> channel
+        <* space
+        <* char ':'
+        <*> rest
 
 
 nickname : Parser String
