@@ -1,9 +1,10 @@
 module Twitch.Chat.MessageLine exposing (..)
 
+import Dict
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import String
-import Twitch.Chat.Badges exposing (Badges)
+import Twitch.Chat.Badges exposing (Badges, BadgeSets)
 import Twitch.Chat.Css as Css
 import Twitch.Chat.Types exposing (Message(..), User, Channel, Tag(..), Badge(..), Emote)
 
@@ -52,7 +53,7 @@ badges tags badgeResponse =
 
         (Badges badges) :: _ ->
             span [ class "badges" ]
-                (viewBadges badgeResponse badges)
+                (viewBadges badgeResponse.badgeSets badges)
 
         _ :: rest ->
             badges rest badgeResponse
@@ -119,8 +120,8 @@ spanContentWithEmotes len emotes content =
                     ++ spanContentWithEmotes (len + (String.length content) - (String.length postEmoteContent)) rest postEmoteContent
 
 
-viewBadges : Badges -> List Badge -> List (Html a)
-viewBadges badgeResponse badges =
+viewBadges : BadgeSets -> List Badge -> List (Html a)
+viewBadges badgeSets badges =
     let
         badgeHtml url =
             span
@@ -134,63 +135,83 @@ viewBadges badgeResponse badges =
                     ]
                     []
                 ]
+
+        getBadgeUrl version versions =
+            Dict.get version versions
+                |> Maybe.map .imageUrl2x
+                |> Maybe.withDefault ""
     in
         case badges of
             [] ->
                 [ text "" ]
 
             Subscriber :: rest ->
-                badgeResponse.subscriber
-                    |> Maybe.map (.image >> badgeHtml)
+                badgeSets.subscriber
+                    |> Maybe.map (getBadgeUrl "1" >> badgeHtml)
                     |> Maybe.withDefault (text "")
-                    |> flip (::) (viewBadges badgeResponse rest)
+                    |> flip (::) (viewBadges badgeSets rest)
 
             Turbo :: rest ->
-                badgeHtml badgeResponse.turbo.image
-                    :: viewBadges badgeResponse rest
+                badgeHtml (getBadgeUrl "1" badgeSets.turbo)
+                    :: viewBadges badgeSets rest
 
             Moderator :: rest ->
-                badgeHtml badgeResponse.mod.image
-                    :: viewBadges badgeResponse rest
+                badgeHtml (getBadgeUrl "1" badgeSets.mod)
+                    :: viewBadges badgeSets rest
 
             GlobalMod :: rest ->
-                badgeHtml badgeResponse.globalMod.image
-                    :: viewBadges badgeResponse rest
+                badgeHtml (getBadgeUrl "1" badgeSets.globalMod)
+                    :: viewBadges badgeSets rest
 
             (Bits bits) :: rest ->
                 let
-                    col =
-                        if bits > 9999 then
-                            "red"
-                        else if bits > 4999 then
-                            "blue"
-                        else if bits > 999 then
-                            "green"
-                        else if bits > 99 then
-                            "purple"
-                        else
-                            "gray"
-
                     url =
-                        String.join "/"
-                            [ "https://static-cdn.jtvnw.net/bits"
-                            , "light"
-                            , "static"
-                            , col
-                            , "4"
-                            ]
+                        if bits > 99999 then
+                            getBadgeUrl "100000" badgeSets.bits
+                        else if bits > 9999 then
+                            getBadgeUrl "10000" badgeSets.bits
+                        else if bits > 4999 then
+                            getBadgeUrl "5000" badgeSets.bits
+                        else if bits > 999 then
+                            getBadgeUrl "1000" badgeSets.bits
+                        else if bits > 99 then
+                            getBadgeUrl "100" badgeSets.bits
+                        else
+                            getBadgeUrl "1" badgeSets.bits
                 in
                     badgeHtml url
-                        :: viewBadges badgeResponse rest
+                        :: viewBadges badgeSets rest
 
             Admin :: rest ->
-                badgeHtml badgeResponse.admin.image
-                    :: viewBadges badgeResponse rest
+                badgeHtml (getBadgeUrl "1" badgeSets.admin)
+                    :: viewBadges badgeSets rest
 
             Staff :: rest ->
-                badgeHtml badgeResponse.staff.image
-                    :: viewBadges badgeResponse rest
+                badgeHtml (getBadgeUrl "1" badgeSets.staff)
+                    :: viewBadges badgeSets rest
 
             Broadcaster :: rest ->
-                badgeHtml badgeResponse.broadcaster.image
-                    :: viewBadges badgeResponse rest
+                badgeHtml (getBadgeUrl "1" badgeSets.broadcaster)
+                    :: viewBadges badgeSets rest
+
+
+connectingMessage : Html a
+connectingMessage =
+    div
+        [ class "message"
+        , style
+            <| Css.privateMessageStyle
+            ++ [ ( "color", "#575260" ) ]
+        ]
+        [ text "Connecting to chat room..." ]
+
+
+connectedLine : Html a
+connectedLine =
+    div
+        [ class "message"
+        , style
+            <| Css.privateMessageStyle
+            ++ [ ( "color", "#575260" ) ]
+        ]
+        [ text "Welcome to the chat room!" ]

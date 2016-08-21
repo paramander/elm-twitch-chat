@@ -18,7 +18,7 @@ WebSockets.
 - [x] Admin badges
 - [x] Staff badges
 - [x] Broadcaster badges
-- [ ] Bits badges (wrong implementation, will have to use the new [badges.twitch.tv](https://badges.twitch.tv) endpoint)
+- [x] Bits badges (wrong implementation, will have to use the new [badges.twitch.tv](https://badges.twitch.tv) endpoint)
 - [ ] Cheers
 - [ ] Resubscribe notices
 - [ ] Subscribe notices

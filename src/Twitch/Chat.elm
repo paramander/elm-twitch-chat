@@ -15,6 +15,7 @@ import Json.Decode as JD
 import String
 import Task exposing (Task)
 import Twitch.Chat.Badges exposing (Badges)
+import Twitch.Chat.Channel
 import Twitch.Chat.Css as Css
 import Twitch.Chat.Header exposing (Header)
 import Twitch.Chat.MessageLine as MessageLine
@@ -67,7 +68,8 @@ type alias Chat =
 {-| Convenience type for chaining multiple chat requests together
 -}
 type alias ChatTaskType =
-    { badges : Badges
+    { channel : Twitch.Chat.Channel.Channel
+    , badges : Badges
     }
 
 
@@ -119,17 +121,31 @@ init username oauth channelName =
             , sendWsUrl = "ws://irc-ws.chat.twitch.tv:80?"
             , mBadges = Nothing
             , userMessage = ""
-            , messages = []
+            , messages = [ MessageLine.connectingMessage ]
             }
-
-        tasks =
-            Task.map ChatTaskType
-                (Twitch.Chat.Badges.getBadges channelName)
     in
         model
-            ! [ tasks
+            ! [ initTasks channelName
                     |> Task.perform ServerError ChatTaskResponse
               ]
+
+
+initTasks : String -> Task Http.Error ChatTaskType
+initTasks channelName =
+    let
+        channelTask =
+            Twitch.Chat.Channel.getChannel channelName
+
+        badgesTask =
+            Task.map (.id >> toString) channelTask
+                `Task.andThen` \aResult ->
+                    (Twitch.Chat.Badges.getGlobalBadges `Task.andThen` \bResult ->
+                         Twitch.Chat.Badges.getSubscriberBadges aResult bResult
+                    )
+    in
+        Task.map2 ChatTaskType
+            channelTask
+            badgesTask
 
 
 {-| Respond to events and model state changes.
@@ -229,6 +245,10 @@ update msg model =
             in
                 { model
                     | mBadges = Just badges
+                    , messages =
+                        List.tail model.messages
+                            |> Maybe.withDefault []
+                            |> (::) MessageLine.connectedLine
                 }
                     ! loginCmds
 
