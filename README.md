@@ -20,13 +20,31 @@ WebSockets.
 - [x] Broadcaster badges
 - [x] Bits badges (wrong implementation, will have to use the new [badges.twitch.tv](https://badges.twitch.tv) endpoint)
 - [ ] Cheers
-- [ ] Resubscribe notices
-- [ ] Subscribe notices
+- [x] Resubscribe notices
+- [x] Subscribe notices
 - [ ] Timeout/ban actions
 - [ ] `/me` actions
 - [ ] Emote picker
 - [ ] Viewer list
 - [ ] `@` tagging
+
+## Shortcomings
+
+I haven't been able to figure out JSONP requests in Elm. Twitch disallows all origins except `*.twitch.tv` on their servers.
+They assume people consuming the API use JSONP to circumvent this. So this means that in order to use this script via `localhost`,
+you have to disable your browser's Cross Origin restrictions.
+
+For Chrome, run the browser via command line with these arguments:
+
+```
+$ open -a Google\ Chrome --args --disable-web-security --user-data-dir
+```
+
+For Safari:
+
+```
+Menu > Develop > Disable Cross-Origin Restrictions
+```
 
 ## Try it out
 
