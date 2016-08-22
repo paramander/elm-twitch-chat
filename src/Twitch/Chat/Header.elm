@@ -1,10 +1,9 @@
 module Twitch.Chat.Header exposing (..)
 
 import Html exposing (..)
-import Html.Attributes exposing (class, style)
 import Svg
 import Svg.Attributes as SvgAttr
-import Twitch.Chat.Css as Css
+import Twitch.Chat.Css as Css exposing (id, class)
 
 
 type alias Header =
@@ -20,12 +19,10 @@ init =
 view : Header -> Html a
 view model =
     div
-        [ class "chat-header"
-        , style Css.headerStyles
+        [ class [ Css.Header ]
         ]
         [ div
-            [ class "chat-header__button"
-            , style Css.headerButtonStyle
+            [ class [ Css.HeaderButton ]
             ]
             [ Svg.svg
                 [ SvgAttr.height "16px"
@@ -43,8 +40,7 @@ view model =
                 ]
             ]
         , p
-            [ class "room-title"
-            , style Css.roomTitleStyles
+            [ class [ Css.RoomTitle ]
             ]
             [ text model.channelName ]
         ]

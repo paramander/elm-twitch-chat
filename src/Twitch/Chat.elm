@@ -8,7 +8,7 @@ module Twitch.Chat exposing (Chat, Msg(..), init, update, view, subscriptions)
 -}
 
 import Html exposing (..)
-import Html.Attributes exposing (..)
+import Html.Attributes exposing (placeholder, value)
 import Html.Events exposing (onInput, on, onWithOptions, onClick, keyCode)
 import Http
 import Json.Decode as JD
@@ -16,7 +16,7 @@ import String
 import Task exposing (Task)
 import Twitch.Chat.Badges exposing (Badges)
 import Twitch.Chat.Channel
-import Twitch.Chat.Css as Css
+import Twitch.Chat.Css as Css exposing (class, id)
 import Twitch.Chat.Header exposing (Header)
 import Twitch.Chat.MessageLine as MessageLine
 import Twitch.Chat.Parser
@@ -293,27 +293,22 @@ dropMessagesIfNeeded list =
 view : Chat -> Html Msg
 view model =
     div
-        [ class "chat-container"
-        , style Css.containerStyles
+        [ class [ Css.Container ]
         ]
         [ Twitch.Chat.Header.view model.header
         , div
-            [ class "chat-room"
-            , style Css.chatRoomStyles
+            [ class [ Css.ChatRoom ]
             ]
             [ div
-                [ id "ChatDiv"
-                , class "chat-messages"
-                , style Css.chatMessagesStyles
+                [ id Css.ChatDiv
+                , class [ Css.ChatMessages ]
                 ]
                 model.messages
             , div
-                [ class "chat-interface"
-                , style Css.chatInterfaceStyles
+                [ class [ Css.ChatInterface ]
                 ]
                 [ div
-                    [ class "textarea-contain"
-                    , style Css.textareaContainStyles
+                    [ class [ Css.TextareaContain ]
                     ]
                     [ viewChatbox model.userMessage
                     ]
@@ -326,9 +321,7 @@ view model =
 viewChatbox : String -> Html Msg
 viewChatbox message =
     textarea
-        [ class "chat-input"
-        , placeholder "Send a message"
-        , style Css.textareaStyles
+        [ placeholder "Send a message"
         , onEnter SubmitMessage
         , preventDefaultOnEnter
         , onInput UserMessage
@@ -370,12 +363,10 @@ preventDefaultOnEnter =
 viewChatButtons : Html Msg
 viewChatButtons =
     div
-        [ class "chat-buttons-container"
-        , style Css.chatButtonsContainerStyles
+        [ class [ Css.ButtonsContainer ]
         ]
         [ button
-            [ class "submit-button"
-            , style Css.submitStyles
+            [ class [ Css.Submit ]
             , onClick SubmitMessage
             ]
             [ text "Chat" ]

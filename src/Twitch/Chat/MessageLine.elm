@@ -2,30 +2,28 @@ module Twitch.Chat.MessageLine exposing (..)
 
 import Dict
 import Html exposing (..)
-import Html.Attributes exposing (..)
+import Html.Attributes exposing (style, src, attribute)
 import String
 import Twitch.Chat.Badges exposing (Badges, BadgeSets, BadgeProperties)
-import Twitch.Chat.Css as Css
+import Twitch.Chat.Css as Css exposing (id, class)
 import Twitch.Chat.Types exposing (Message(..), User, Channel, Tag(..), Badge(..), Emote)
 
 
 viewMessage : Maybe Badges -> List Tag -> User -> String -> Html a
 viewMessage badgeResponse tags user content =
     div
-        [ class "message-line chat-line"
-        , style Css.privateMessageStyle
+        [ class [ Css.Message, Css.PrivateMessage ]
         ]
         [ Maybe.map (badges tags) badgeResponse
             |> Maybe.withDefault (text "")
         , span
-            [ class "from"
+            [ class [ Css.From ]
             , style <| Css.fromStyle tags
             ]
             [ chatFrom tags user ]
         , colon
         , span
-            [ class "content"
-            , style Css.chatContentStyle
+            [ class [ Css.Content ]
             ]
             <| chatContent tags content
         ]
@@ -34,8 +32,7 @@ viewMessage badgeResponse tags user content =
 viewResub : Maybe Badges -> List Tag -> Channel -> Maybe String -> Html a
 viewResub badgeResponse tags channel mContent =
     div
-        [ class "message-line chat-line special-message"
-        , style Css.resubMessageStyle
+        [ class [ Css.Message, Css.ResubMessage ]
         ]
         <| systemMessage tags
         :: case mContent of
@@ -46,14 +43,13 @@ viewResub badgeResponse tags channel mContent =
                 [ Maybe.map (badges tags) badgeResponse
                     |> Maybe.withDefault (text "")
                 , span
-                    [ class "from"
+                    [ class [ Css.From ]
                     , style <| Css.fromStyle tags
                     ]
                     [ chatFrom tags "" ]
                 , colon
                 , span
-                    [ class "content"
-                    , style Css.chatContentStyle
+                    [ class [ Css.Content ]
                     ]
                     <| chatContent tags content
                 ]
@@ -62,12 +58,10 @@ viewResub badgeResponse tags channel mContent =
 viewSub : String -> Html a
 viewSub content =
     div
-        [ class "message special-message"
-        , style Css.resubMessageStyle
+        [ class [ Css.Message, Css.ResubMessage ]
         ]
         [ div
-            [ class "system-msg"
-            , style Css.systemMessageStyle
+            [ class [ Css.SystemMessage ]
             ]
             [ text content ]
         ]
@@ -81,8 +75,7 @@ systemMessage tags =
 
         (System message) :: _ ->
             div
-                [ class "system-msg"
-                , style Css.systemMessageStyle
+                [ class [ Css.SystemMessage ]
                 ]
                 [ text message ]
 
@@ -93,12 +86,7 @@ systemMessage tags =
 colon : Html a
 colon =
     span
-        [ class "colon"
-        , style
-            <| Css.privateMessageStyle
-            ++ [ ( "margin", "0 2px 0 0" )
-               , ( "padding", "0" )
-               ]
+        [ class [ Css.PrivateMessage, Css.Colon ]
         ]
         [ text ":"
         ]
@@ -111,7 +99,7 @@ badges tags badgeResponse =
             text ""
 
         (Badges badges) :: _ ->
-            span [ class "badges" ]
+            span [ class [ Css.Badges ] ]
                 (viewBadges badgeResponse.badgeSets badges)
 
         _ :: rest ->
@@ -162,8 +150,7 @@ spanContentWithEmotes len emotes content =
                 emoteHtml =
                     img
                         [ src emoteSrc
-                        , class "emote"
-                        , style Css.emoteStyle
+                        , class [ Css.Emote ]
                         ]
                         []
 
@@ -185,12 +172,10 @@ viewBadges badgeSets badges =
         badgeHtml : BadgeProperties -> Html a
         badgeHtml properties =
             span
-                [ class "balloon-wrapper"
-                , style Css.balloonWrapperStyle
+                [ class [ Css.BalloonWrapper ]
                 ]
                 [ img
-                    [ class "badge"
-                    , style Css.badgeImgStyle
+                    [ class [ Css.BadgeImg ]
                     , src properties.imageUrl1x
                     , srcset
                         [ properties.imageUrl2x ++ " 2x"
@@ -199,8 +184,7 @@ viewBadges badgeSets badges =
                     ]
                     []
                 , div
-                    [ class "ballon balloon--tooltip"
-                    , style Css.balloonTooltipStyle
+                    [ class [ Css.BalloonTooltip ]
                     ]
                     [ text properties.title ]
                 ]
@@ -272,10 +256,7 @@ viewBadges badgeSets badges =
 connectingMessage : Html a
 connectingMessage =
     div
-        [ class "message"
-        , style
-            <| Css.privateMessageStyle
-            ++ [ ( "color", "#575260" ) ]
+        [ class [ Css.Message, Css.Notice ]
         ]
         [ text "Connecting to chat room..." ]
 
@@ -283,9 +264,6 @@ connectingMessage =
 connectedLine : Html a
 connectedLine =
     div
-        [ class "message"
-        , style
-            <| Css.privateMessageStyle
-            ++ [ ( "color", "#575260" ) ]
+        [ class [ Css.Message, Css.Notice ]
         ]
         [ text "Welcome to the chat room!" ]
