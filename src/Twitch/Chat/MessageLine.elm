@@ -140,16 +140,18 @@ spanContentWithEmotes len emotes content =
 
         emote :: rest ->
             let
-                emoteSrc =
+                emoteSrc size =
                     String.join "/"
                         [ "//static-cdn.jtvnw.net/emoticons/v1"
                         , toString emote.id
-                        , "1.0"
+                        , size
                         ]
 
                 emoteHtml =
                     img
-                        [ src emoteSrc
+                        [ src <| emoteSrc "1.0"
+                        , srcset
+                            [ emoteSrc "2.0 2x" ]
                         , class [ Css.Emote ]
                         ]
                         []
@@ -188,11 +190,6 @@ viewBadges badgeSets badges =
                     ]
                     [ text properties.title ]
                 ]
-
-        srcset : List String -> Attribute a
-        srcset =
-            String.join ", "
-                >> attribute "srcset"
 
         getBadgeVersion version versions =
             Dict.get version versions
@@ -267,3 +264,9 @@ connectedLine =
         [ class [ Css.Message, Css.Notice ]
         ]
         [ text "Welcome to the chat room!" ]
+
+
+srcset : List String -> Attribute a
+srcset =
+    String.join ", "
+        >> attribute "srcset"
