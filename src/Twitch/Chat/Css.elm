@@ -182,6 +182,14 @@ css =
             ]
         , (.) Badges
             [ property "float" "left"
+            , after
+                [ property "content" "''"
+                , property "display" "table"
+                , property "clear" "both"
+                , property "visibility" "hidden"
+                , fontSize (px 0)
+                , height zero
+                ]
             ]
         , (.) BadgeImg
             [ height (px 18)
@@ -218,13 +226,44 @@ css =
         , (.) BalloonWrapper
             [ position relative
             , property "float" "left"
+            , hover
+                [ descendants
+                    [ (.) BalloonTooltip
+                        [ display block
+                        , before
+                            [ property "content" "''"
+                            , position absolute
+                            , top (px -6)
+                            , left (px -6)
+                            , property "width" "calc(100% + 12px)"
+                            , property "height" "calc(100% + 12px)"
+                            , zIndex -1
+                            ]
+                        , after
+                            [ property "content" "''"
+                            , position absolute
+                            , left (pct 50)
+                            , marginLeft (px -3)
+                            , backgroundColor (hex "#0e0c13")
+                            , top (px -3)
+                            , borderRadius3 (px 1) zero zero
+                            , property "border-width" "1px 0 0 1px"
+                            , width (px 6)
+                            , height (px 6)
+                            , transform (rotate (deg 45))
+                            , zIndex -1
+                            ]
+                        ]
+                    ]
+                ]
             ]
         , (.) BalloonTooltip
-            [ left (px 50)
+            [ left (px 10)
             , transform (translateX (pct -50))
+            , backgroundColor (hex "#0e0c13")
             , color (hex "#ffffff")
             , padding2 (px 3) (px 6)
-            , property "white-space" "no-wrap"
+            , property "white-space" "nowrap"
             , property "box-shadow" "none"
             , top (pct 100)
             , marginTop (px 6)
