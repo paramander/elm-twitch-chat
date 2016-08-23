@@ -74,3 +74,7 @@ the application on [localhost:8000](http://localhost:8000):
 ```
 $ npm start
 ```
+
+and it should look like this:
+
+![Preview](http://i.imgur.com/IOuizaV.gif)
