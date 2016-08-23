@@ -139,9 +139,10 @@ initTasks channelName =
         badgesTask =
             Task.map (.id >> toString) channelTask
                 `Task.andThen` \aResult ->
-                    (Twitch.Chat.Badges.getGlobalBadges `Task.andThen` \bResult ->
-                         Twitch.Chat.Badges.getSubscriberBadges aResult bResult
-                    )
+                                (Twitch.Chat.Badges.getGlobalBadges
+                                    `Task.andThen` \bResult ->
+                                                    Twitch.Chat.Badges.getSubscriberBadges aResult bResult
+                                )
     in
         Task.map2 ChatTaskType
             channelTask

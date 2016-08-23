@@ -32,19 +32,8 @@ WebSockets.
 
 I haven't been able to figure out JSONP requests in Elm. Twitch disallows all origins except `*.twitch.tv` on their servers.
 They assume people consuming the API use JSONP to circumvent this. So this means that in order to use this script via `localhost`,
-you have to disable your browser's Cross Origin restrictions.
 
-For Chrome, run the browser via command line with these arguments:
-
-```
-$ open -a Google\ Chrome --args --disable-web-security --user-data-dir
-```
-
-For Safari:
-
-```
-Menu > Develop > Disable Cross-Origin Restrictions
-```
+I have tried to implement a VERY HACKY JSONP solution. It uses global three global callbacks so it's very much anti-Elm. It also forced me to go a `Native` direction because you can't pass back a `Task` from ports. It needs to be a `Task`, because it will be chained with other `Task`s.
 
 ## Try it out
 

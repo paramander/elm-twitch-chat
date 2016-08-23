@@ -3,6 +3,7 @@ module Twitch.Chat.Badges exposing (..)
 import Dict exposing (Dict)
 import Http
 import Json.Decode as JD exposing (Decoder, (:=))
+import Jsonp
 import String
 import Task exposing (Task)
 
@@ -69,7 +70,7 @@ getBadges channelId decoder =
                 , "display"
                 ]
     in
-        Http.get (badgesDecoder decoder) url
+        Jsonp.get (badgesDecoder decoder) url
 
 
 badgesDecoder : Decoder BadgeSets -> Decoder Badges

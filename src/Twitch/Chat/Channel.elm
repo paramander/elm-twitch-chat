@@ -2,6 +2,7 @@ module Twitch.Chat.Channel exposing (..)
 
 import Http
 import Json.Decode as JD exposing (Decoder, (:=))
+import Jsonp
 import String
 import Task exposing (Task)
 
@@ -24,7 +25,7 @@ getChannel channelName =
                 ]
 
     in
-        Http.get channelDecoder url
+        Jsonp.get channelDecoder url
 
 
 channelDecoder : Decoder Channel

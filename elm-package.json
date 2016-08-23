@@ -1,7 +1,7 @@
 {
     "version": "0.1.0",
     "summary": "Partial Twitch chat implementation using WebSockets",
-    "repository": "https://github.com/user/project.git",
+    "repository": "https://github.com/paramanders/elm-twitch-chat.git",
     "license": "MIT",
     "source-directories": [
         "src"
@@ -9,6 +9,7 @@
     "exposed-modules": [
         "Twitch.Chat"
     ],
+    "native-modules" : true,
     "dependencies": {
         "Bogdanp/elm-combine": "2.2.1 <= v < 3.0.0",
         "elm-lang/core": "4.0.5 <= v < 5.0.0",
