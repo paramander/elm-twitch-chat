@@ -1,272 +1,56 @@
 module Twitch.Chat.MessageLine exposing (..)
 
-import Dict
 import Html exposing (..)
-import Html.Attributes exposing (style, src, attribute)
-import String
 import Twitch.Chat.Badges exposing (Badges, BadgeSets, BadgeProperties)
-import Twitch.Chat.Css as Css exposing (id, class)
+import Twitch.Chat.MessageLine.View as View
+import Twitch.Chat.Parser
 import Twitch.Chat.Types exposing (Message(..), User, Channel, Tag(..), Badge(..), Emote)
+import WebSocket
 
 
-viewMessage : Maybe Badges -> List Tag -> User -> String -> Html a
-viewMessage badgeResponse tags user content =
-    div
-        [ class [ Css.Message, Css.PrivateMessage ]
-        ]
-        [ Maybe.map (badges tags) badgeResponse
-            |> Maybe.withDefault (text "")
-        , span
-            [ class [ Css.From ]
-            , style <| Css.fromStyle tags
-            ]
-            [ chatFrom tags user ]
-        , colon
-        , span
-            [ class [ Css.Content ]
-            ]
-            <| chatContent tags content
-        ]
+type Msg
+    = RawMessage String
 
 
-viewResub : Maybe Badges -> List Tag -> Channel -> Maybe String -> Html a
-viewResub badgeResponse tags channel mContent =
-    div
-        [ class [ Css.Message, Css.ResubMessage ]
-        ]
-        <| systemMessage tags
-        :: case mContent of
-            Nothing ->
-                [ text "" ]
-
-            Just content ->
-                [ Maybe.map (badges tags) badgeResponse
-                    |> Maybe.withDefault (text "")
-                , span
-                    [ class [ Css.From ]
-                    , style <| Css.fromStyle tags
-                    ]
-                    [ chatFrom tags "" ]
-                , colon
-                , span
-                    [ class [ Css.Content ]
-                    ]
-                    <| chatContent tags content
-                ]
+subscriptions : String -> Sub Msg
+subscriptions receiveUrl =
+    WebSocket.listen receiveUrl RawMessage
 
 
-viewSub : String -> Html a
-viewSub content =
-    div
-        [ class [ Css.Message, Css.ResubMessage ]
-        ]
-        [ div
-            [ class [ Css.SystemMessage ]
-            ]
-            [ text content ]
-        ]
+render : Msg -> String -> Maybe Badges -> ( Html Msg, Cmd Msg )
+render msg receiveUrl mBadges =
+    case msg of
+        RawMessage str ->
+            case Twitch.Chat.Parser.parse str of
+                Ok message ->
+                    spanMessage receiveUrl mBadges message
+
+                Err err ->
+                    let
+                        _ =
+                            Debug.log "PARSE ERR" err
+                    in
+                        text ""
+                            ! []
 
 
-systemMessage : List Tag -> Html a
-systemMessage tags =
-    case tags of
-        [] ->
+spanMessage : String -> Maybe Badges -> Message -> ( Html Msg, Cmd Msg )
+spanMessage receiveUrl mBadges message =
+    case message of
+        PrivateMessage tags user channel content ->
+            View.viewMessage mBadges tags user content
+                ! []
+
+        Resubscription tags channel mContent ->
+            View.viewResub mBadges tags channel mContent
+                ! []
+
+        Subscription channel content ->
+            View.viewSub content
+                ! []
+
+        -- Pings are handled in the parent
+        Ping content ->
             text ""
+                ! [ WebSocket.send receiveUrl <| "PONG " ++ content ]
 
-        (System message) :: _ ->
-            div
-                [ class [ Css.SystemMessage ]
-                ]
-                [ text message ]
-
-        _ :: rest ->
-            systemMessage rest
-
-
-colon : Html a
-colon =
-    span
-        [ class [ Css.PrivateMessage, Css.Colon ]
-        ]
-        [ text ":"
-        ]
-
-
-badges : List Tag -> Badges -> Html a
-badges tags badgeResponse =
-    case tags of
-        [] ->
-            text ""
-
-        (Badges badges) :: _ ->
-            span [ class [ Css.Badges ] ]
-                (viewBadges badgeResponse.badgeSets badges)
-
-        _ :: rest ->
-            badges rest badgeResponse
-
-
-chatFrom : List Tag -> User -> Html a
-chatFrom tags user =
-    case tags of
-        [] ->
-            text user
-
-        (DisplayName displayName) :: _ ->
-            text displayName
-
-        _ :: rest ->
-            chatFrom rest user
-
-
-chatContent : List Tag -> String -> List (Html a)
-chatContent tags content =
-    case tags of
-        [] ->
-            [ text content ]
-
-        (Emotes emotes) :: _ ->
-            spanContentWithEmotes 0 emotes content
-
-        _ :: rest ->
-            chatContent rest content
-
-
-spanContentWithEmotes : Int -> List Emote -> String -> List (Html a)
-spanContentWithEmotes len emotes content =
-    case emotes of
-        [] ->
-            [ text content ]
-
-        emote :: rest ->
-            let
-                emoteSrc size =
-                    String.join "/"
-                        [ "//static-cdn.jtvnw.net/emoticons/v1"
-                        , toString emote.id
-                        , size
-                        ]
-
-                emoteHtml =
-                    img
-                        [ src <| emoteSrc "1.0"
-                        , srcset
-                            [ emoteSrc "2.0 2x" ]
-                        , class [ Css.Emote ]
-                        ]
-                        []
-
-                preEmoteContent =
-                    String.slice 0 (emote.begin - len) content
-
-                postEmoteContent =
-                    String.dropLeft (emote.end + 1 - len) content
-            in
-                [ text preEmoteContent
-                , emoteHtml
-                ]
-                    ++ spanContentWithEmotes (len + (String.length content) - (String.length postEmoteContent)) rest postEmoteContent
-
-
-viewBadges : BadgeSets -> List Badge -> List (Html a)
-viewBadges badgeSets badges =
-    let
-        badgeHtml : BadgeProperties -> Html a
-        badgeHtml properties =
-            span
-                [ class [ Css.BalloonWrapper ]
-                ]
-                [ img
-                    [ class [ Css.BadgeImg ]
-                    , src properties.imageUrl1x
-                    , srcset
-                        [ properties.imageUrl2x ++ " 2x"
-                        , properties.imageUrl4x ++ " 4x"
-                        ]
-                    ]
-                    []
-                , div
-                    [ class [ Css.BalloonTooltip ]
-                    ]
-                    [ text properties.title ]
-                ]
-
-        getBadgeVersion version versions =
-            Dict.get version versions
-                |> Maybe.map badgeHtml
-                |> Maybe.withDefault (text "")
-    in
-        case badges of
-            [] ->
-                [ text "" ]
-
-            Subscriber :: rest ->
-                badgeSets.subscriber
-                    |> Maybe.map (getBadgeVersion "1")
-                    |> Maybe.withDefault (text "")
-                    |> flip (::) (viewBadges badgeSets rest)
-
-            Turbo :: rest ->
-                getBadgeVersion "1" badgeSets.turbo
-                    :: viewBadges badgeSets rest
-
-            Moderator :: rest ->
-                getBadgeVersion "1" badgeSets.mod
-                    :: viewBadges badgeSets rest
-
-            GlobalMod :: rest ->
-                getBadgeVersion "1" badgeSets.globalMod
-                    :: viewBadges badgeSets rest
-
-            (Bits bits) :: rest ->
-                let
-                    bitsHtml =
-                        if bits > 99999 then
-                            getBadgeVersion "100000" badgeSets.bits
-                        else if bits > 9999 then
-                            getBadgeVersion "10000" badgeSets.bits
-                        else if bits > 4999 then
-                            getBadgeVersion "5000" badgeSets.bits
-                        else if bits > 999 then
-                            getBadgeVersion "1000" badgeSets.bits
-                        else if bits > 99 then
-                            getBadgeVersion "100" badgeSets.bits
-                        else
-                            getBadgeVersion "1" badgeSets.bits
-                in
-                    bitsHtml
-                        :: viewBadges badgeSets rest
-
-            Admin :: rest ->
-                getBadgeVersion "1" badgeSets.admin
-                    :: viewBadges badgeSets rest
-
-            Staff :: rest ->
-                getBadgeVersion "1" badgeSets.staff
-                    :: viewBadges badgeSets rest
-
-            Broadcaster :: rest ->
-                getBadgeVersion "1" badgeSets.broadcaster
-                    :: viewBadges badgeSets rest
-
-
-connectingMessage : Html a
-connectingMessage =
-    div
-        [ class [ Css.Message, Css.Notice ]
-        ]
-        [ text "Connecting to chat room..." ]
-
-
-connectedLine : Html a
-connectedLine =
-    div
-        [ class [ Css.Message, Css.Notice ]
-        ]
-        [ text "Welcome to the chat room!" ]
-
-
-srcset : List String -> Attribute a
-srcset =
-    String.join ", "
-        >> attribute "srcset"

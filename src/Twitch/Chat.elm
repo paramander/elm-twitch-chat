@@ -8,20 +8,17 @@ module Twitch.Chat exposing (Chat, Msg(..), init, update, view, subscriptions)
 -}
 
 import Html exposing (..)
-import Html.Attributes exposing (placeholder, value)
-import Html.Events exposing (onInput, on, onWithOptions, onClick, keyCode)
+import Html.App
 import Http
-import Json.Decode as JD
-import String
 import Task exposing (Task)
 import Twitch.Chat.Badges exposing (Badges)
 import Twitch.Chat.Channel
 import Twitch.Chat.Css as Css exposing (class, id)
 import Twitch.Chat.Header exposing (Header)
 import Twitch.Chat.MessageLine as MessageLine
-import Twitch.Chat.Parser
+import Twitch.Chat.MessageLine.View as MessageLineView
 import Twitch.Chat.Properties exposing (Properties)
-import Twitch.Chat.Types exposing (Message(..))
+import Twitch.Chat.SendText as SendText exposing (UserMessage)
 import Twitch.Ports exposing (scrollChat)
 import WebSocket
 
@@ -41,12 +38,10 @@ only `Badges` are loaded from the Twitch API.
 -}
 type Msg
     = NoOp
-    | UserMessage String
-    | SubmitMessage
-    | RawSendMessage String
-    | RawReceiveMessage String
     | ChatTaskResponse ChatTaskType
     | ServerError Http.Error
+    | ChildMessageLineMsg MessageLine.Msg
+    | ChildSendTextMsg SendText.Msg
 
 
 {-| The model state for Twitch Chat.
@@ -60,7 +55,7 @@ type alias Chat =
     , receiveWsUrl : String
     , sendWsUrl : String
     , mBadges : Maybe Badges
-    , userMessage : String
+    , userMessage : UserMessage
     , messages : List (Html Msg)
     }
 
@@ -93,10 +88,10 @@ solved by appending an empty query `"?"` behind Twitch's websocket URL so it
 reads `"ws://irc-ws.chat.twitch.tv:80?"`.
 -}
 subscriptions : Chat -> Sub Msg
-subscriptions ({ receiveWsUrl, sendWsUrl } as model) =
+subscriptions ({ receiveWsUrl, userMessage } as model) =
     Sub.batch
-        [ WebSocket.listen receiveWsUrl RawReceiveMessage
-        , WebSocket.listen sendWsUrl RawSendMessage
+        [ Sub.map ChildMessageLineMsg (MessageLine.subscriptions receiveWsUrl)
+        , Sub.map ChildSendTextMsg (SendText.subscriptions userMessage)
         ]
 
 
@@ -111,22 +106,29 @@ It requires:
 init : String -> String -> String -> ( Chat, Cmd Msg )
 init username oauth channelName =
     let
+        ( userMessage, userMessageCmd ) =
+            SendText.init "ws://irc-ws.chat.twitch.tv:80?" channelName
+
+        header =
+            Twitch.Chat.Header.init channelName
+
         model =
             { channelName = channelName
             , username = username
             , oauth = oauth
-            , header = Twitch.Chat.Header.init channelName
+            , header = header
             , mProperties = Nothing
             , receiveWsUrl = "ws://irc-ws.chat.twitch.tv:80"
             , sendWsUrl = "ws://irc-ws.chat.twitch.tv:80?"
             , mBadges = Nothing
-            , userMessage = ""
-            , messages = [ MessageLine.connectingMessage ]
+            , messages = [ MessageLineView.connectingMessage ]
+            , userMessage = userMessage
             }
     in
         model
             ! [ initTasks channelName
                     |> Task.perform ServerError ChatTaskResponse
+              , Cmd.map ChildSendTextMsg userMessageCmd
               ]
 
 
@@ -159,93 +161,30 @@ update msg model =
             model
                 ! []
 
-        UserMessage str ->
-            { model | userMessage = str }
-                ! []
-
-        SubmitMessage ->
+        ChildMessageLineMsg childMsg ->
             let
-                userMessage =
-                    String.join ""
-                        [ "PRIVMSG #"
-                        , model.channelName
-                        , " :"
-                        , model.userMessage
-                        ]
+                ( messageHtml, messageCmd ) =
+                    MessageLine.render childMsg model.receiveWsUrl model.mBadges
             in
-                { model | userMessage = "" }
-                    ! [ WebSocket.send model.sendWsUrl userMessage
+                { model
+                    | messages =
+                        Html.App.map ChildMessageLineMsg messageHtml
+                            |> (\mappedMessageHtml ->
+                                    model.messages ++ [ mappedMessageHtml ]
+                               )
+                            |> dropMessagesIfNeeded
+                }
+                    ! [ Cmd.map ChildMessageLineMsg messageCmd
+                      , scrollChat ()
                       ]
 
-        RawReceiveMessage message ->
+        ChildSendTextMsg childMsg ->
             let
-                res =
-                    Twitch.Chat.Parser.parse message
+                ( userMessage, userMessageCmd ) =
+                    SendText.update childMsg model.userMessage
             in
-                case res of
-                    Ok message ->
-                        case message of
-                            PrivateMessage tags user channel content ->
-                                { model
-                                    | messages =
-                                        model.messages
-                                            ++ [ MessageLine.viewMessage model.mBadges tags user content ]
-                                            |> dropMessagesIfNeeded
-                                            |> List.take 100
-                                }
-                                    ! [ scrollChat () ]
-
-                            Resubscription tags channel mContent ->
-                                { model
-                                    | messages =
-                                        model.messages
-                                            ++ [ MessageLine.viewResub model.mBadges tags channel mContent ]
-                                            |> dropMessagesIfNeeded
-                                            |> List.take 100
-                                }
-                                    ! [ scrollChat () ]
-
-                            Subscription channel content ->
-                                { model
-                                    | messages =
-                                        model.messages
-                                            ++ [ MessageLine.viewSub content ]
-                                }
-                                    ! [ scrollChat () ]
-
-                            Ping content ->
-                                model
-                                    ! [ WebSocket.send model.receiveWsUrl ("PONG " ++ content) ]
-
-                    Err err ->
-                        let
-                            _ =
-                                Debug.log "RECEIVER PARSE ERR: " err
-                        in
-                            model ! []
-
-        RawSendMessage message ->
-            let
-                res =
-                    Twitch.Chat.Parser.parse message
-            in
-                case res of
-                    Ok message ->
-                        case message of
-                            Ping content ->
-                                model
-                                    ! [ WebSocket.send model.sendWsUrl ("PONG " ++ content) ]
-
-                            _ ->
-                                model
-                                    ! []
-
-                    Err err ->
-                        let
-                            _ =
-                                Debug.log "SENDER PARSE ERR: " err
-                        in
-                            model ! []
+                { model | userMessage = userMessage }
+                    ! [ Cmd.map ChildSendTextMsg userMessageCmd ]
 
         ChatTaskResponse { badges } ->
             let
@@ -268,7 +207,7 @@ update msg model =
                     , messages =
                         List.tail model.messages
                             |> Maybe.withDefault []
-                            |> (::) MessageLine.connectedLine
+                            |> (::) MessageLineView.connectedLine
                 }
                     ! loginCmds
 
@@ -279,14 +218,6 @@ update msg model =
             in
                 { model | messages = newMessages }
                     ! []
-
-
-dropMessagesIfNeeded : List a -> List a
-dropMessagesIfNeeded list =
-    list
-        |> List.length
-        >> flip (-) 100
-        >> flip List.drop list
 
 
 {-| Render the our model state `Chat` in `Html`.
@@ -305,70 +236,14 @@ view model =
                 , class [ Css.ChatMessages ]
                 ]
                 model.messages
-            , div
-                [ class [ Css.ChatInterface ]
-                ]
-                [ div
-                    [ class [ Css.TextareaContain ]
-                    ]
-                    [ viewChatbox model.userMessage
-                    ]
-                , viewChatButtons
-                ]
+            , Html.App.map ChildSendTextMsg (SendText.view model.userMessage)
             ]
         ]
 
 
-viewChatbox : String -> Html Msg
-viewChatbox message =
-    textarea
-        [ placeholder "Send a message"
-        , onEnter SubmitMessage
-        , preventDefaultOnEnter
-        , onInput UserMessage
-        , value message
-        ]
-        []
-
-
-onEnter : Msg -> Attribute Msg
-onEnter msg =
-    let
-        is13 code =
-            if code == 13 then
-                msg
-            else
-                NoOp
-    in
-        on "keydown"
-            (JD.map is13 keyCode)
-
-
-{-| A workaround to the bug in `elm-lang/virtual-dom` where capturing
-the enter button does not work. So two events are used for this: `keydown` and `keypress`.
--}
-preventDefaultOnEnter : Attribute Msg
-preventDefaultOnEnter =
-    onWithOptions "keypress"
-        { stopPropagation = False, preventDefault = True }
-        <| JD.map (always NoOp)
-        <| JD.customDecoder keyCode
-            (\code ->
-                if code == 13 then
-                    Ok code
-                else
-                    Err "ignore"
-            )
-
-
-viewChatButtons : Html Msg
-viewChatButtons =
-    div
-        [ class [ Css.ButtonsContainer ]
-        ]
-        [ button
-            [ class [ Css.Submit ]
-            , onClick SubmitMessage
-            ]
-            [ text "Chat" ]
-        ]
+dropMessagesIfNeeded : List a -> List a
+dropMessagesIfNeeded list =
+    list
+        |> List.length
+        >> flip (-) 100
+        >> flip List.drop list
