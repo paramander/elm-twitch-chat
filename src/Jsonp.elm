@@ -4,8 +4,6 @@ import Http
 import Json.Decode as Json
 import Native.Jsonp
 import Random
-import Random.Char
-import Random.String
 import Task exposing (Task)
 import Time
 
@@ -19,9 +17,8 @@ get decoder url =
                 |> Task.mapError Http.UnexpectedPayload
     in
         randomCallbackName
-            |> flip Task.andThen (jsonp url)
-            |> Task.mapError (always Http.NetworkError)
-            |> flip Task.andThen decode
+            `Task.andThen` jsonp url
+            `Task.andThen` decode
 
 
 jsonp : String -> String -> Task x String
@@ -33,8 +30,9 @@ randomCallbackName : Task x String
 randomCallbackName =
     let
         generator =
-            Random.String.string 10 Random.Char.latin
+            Random.int 100 Random.maxInt
     in
         Time.now
             |> Task.map (round >> Random.initialSeed)
             |> Task.map (Random.step generator >> fst)
+            |> Task.map (toString >> (++) "callback")
