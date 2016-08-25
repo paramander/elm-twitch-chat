@@ -1,36 +1,40 @@
-//import Dict, List, Maybe, Native.Scheduler //
-
-var jsonpNativeCallback = function () { throw new Exception(); };
-
-elmJsonp = function(content) {
-  jsonpNativeCallback(_elm_lang$core$Native_Scheduler.succeed(JSON.stringify(content)));
-};
-
 var _paramanders$elm_twitch_chat$Native_Jsonp = function() {
 
-function jsonp(url)
-{
-  return _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
-    jsonpNativeCallback = callback;
+  function jsonp(url, callbackName)
+  {
 
-    var scriptTag = createScript(url);
-    document.head.appendChild(scriptTag);
-    document.head.removeChild(scriptTag);
-  });
-}
+    return _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
+      window[callbackName] = function(content)
+      {
+        callback(_elm_lang$core$Native_Scheduler.succeed(JSON.stringify(content)));
+      };
+
+      var scriptTag = createScript(url, callbackName);
+      document.head.appendChild(scriptTag);
+      document.head.removeChild(scriptTag);
+    });
+  }
 
 
-function createScript(url) {
-  var s = document.createElement('script');
-  s.type = 'text/javascript';
-  s.id = 'dynScript';
-  s.src = url + '?callback=elmJsonp';
+  function createScript(url, callbackName)
+  {
+    var s = document.createElement('script');
+    s.type = 'text/javascript';
 
-  return s;
-}
+    if (url.indexOf('?') >= 0)
+    {
+      s.src = url + '&callback=' + callbackName;
+    }
+    else {
+      s.src = url + '?callback=' + callbackName;
+    }
 
-return {
-  jsonp: jsonp
-};
+    return s;
+  }
+
+
+  return {
+    jsonp: F2(jsonp)
+  };
 
 }();

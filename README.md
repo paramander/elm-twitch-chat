@@ -28,12 +28,12 @@ WebSockets.
 - [ ] Viewer list
 - [ ] `@` tagging
 
-## Shortcomings
+## JSONP
 
-I haven't been able to figure out JSONP requests in Elm. Twitch disallows all origins except `*.twitch.tv` on their servers.
-They assume people consuming the API use JSONP to circumvent this. So this means that in order to use this script via `localhost`,
-
-I have tried to implement a VERY HACKY JSONP solution. It uses global three global callbacks so it's very much anti-Elm. It also forced me to go a `Native` direction because you can't pass back a `Task` from ports. It needs to be a `Task`, because it will be chained with other `Task`s.
+The recommended way of consuming the Twitch API is JSONP. `elm-http` has no way
+of using JSONP. That's why this project includes some Native Elm code to
+solve this. See `src/Jsonp.elm` and `src/Native/Jsonp.js`. It returns a `Task` so
+it will fit in any `elm-http` workflow.
 
 ## Try it out
 
