@@ -26,15 +26,12 @@ import WebSocket
 {-| The messages our `Chat` responds to.
 
 * `NoOp`: This is the "empty" state change.
-* `UserMessage`: The chat textarea state changes
-* `SubmitMessage`: Sending the message in the chat textarea and emptying it
-* `RawSendMessage`: Receives IRC lines from the "sender" websocket. A sender websocket has
-to receive lines, because it needs to respond to PINGs from IRC.
-* `RawReceiveMessage`: Receives IRC lines from the "receiver" websocket and tries to parse
 the chat messages.
 * `ChatTaskResponse`: Respond to the HTTP requests that are needed to setup chat. Right now,
 only `Badges` are loaded from the Twitch API.
 * `ServerError`: Respond to HTTP errors when processing `ChatTaskResponse`.
+* `ChildMessageLineMsg`: This is an intermediary type constructor to route `MessageLine.Msg` to its own module
+* `ChildSendTextMsg`: This is an intermediary type constructor to route `SendText.Msg` to its own module
 -}
 type Msg
     = NoOp
@@ -52,8 +49,6 @@ type alias Chat =
     , oauth : String
     , header : Header
     , mProperties : Maybe Properties
-    , receiveWsUrl : String
-    , sendWsUrl : String
     , mBadges : Maybe Badges
     , userMessage : UserMessage
     , messages : List (Html Msg)
@@ -88,7 +83,7 @@ solved by appending an empty query `"?"` behind Twitch's websocket URL so it
 reads `"ws://irc-ws.chat.twitch.tv:80?"`.
 -}
 subscriptions : Chat -> Sub Msg
-subscriptions ({ receiveWsUrl, userMessage } as model) =
+subscriptions ({ userMessage } as model) =
     Sub.batch
         [ Sub.map ChildMessageLineMsg (MessageLine.subscriptions receiveWsUrl)
         , Sub.map ChildSendTextMsg (SendText.subscriptions userMessage)
@@ -107,7 +102,7 @@ init : String -> String -> String -> ( Chat, Cmd Msg )
 init username oauth channelName =
     let
         ( userMessage, userMessageCmd ) =
-            SendText.init "ws://irc-ws.chat.twitch.tv:80?" channelName
+            SendText.init sendWsUrl channelName
 
         header =
             Twitch.Chat.Header.init channelName
@@ -118,8 +113,6 @@ init username oauth channelName =
             , oauth = oauth
             , header = header
             , mProperties = Nothing
-            , receiveWsUrl = "ws://irc-ws.chat.twitch.tv:80"
-            , sendWsUrl = "ws://irc-ws.chat.twitch.tv:80?"
             , mBadges = Nothing
             , messages = [ MessageLineView.connectingMessage ]
             , userMessage = userMessage
@@ -130,6 +123,16 @@ init username oauth channelName =
                     |> Task.perform ServerError ChatTaskResponse
               , Cmd.map ChildSendTextMsg userMessageCmd
               ]
+
+
+receiveWsUrl : String
+receiveWsUrl =
+    "ws://irc-ws.chat.twitch.tv:80"
+
+
+sendWsUrl : String
+sendWsUrl =
+    "ws://irc-ws.chat.twitch.tv:80?"
 
 
 initTasks : String -> Task Http.Error ChatTaskType
@@ -164,7 +167,7 @@ update msg model =
         ChildMessageLineMsg childMsg ->
             let
                 ( messageHtml, messageCmd ) =
-                    MessageLine.render childMsg model.receiveWsUrl model.mBadges
+                    MessageLine.render childMsg receiveWsUrl model.mBadges
             in
                 { model
                     | messages =
@@ -198,8 +201,8 @@ update msg model =
                         ]
 
                 loginCmds =
-                    [ joinCommands model.sendWsUrl
-                    , joinCommands model.receiveWsUrl
+                    [ joinCommands sendWsUrl
+                    , joinCommands receiveWsUrl
                     ]
             in
                 { model

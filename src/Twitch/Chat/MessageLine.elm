@@ -8,6 +8,10 @@ import Twitch.Chat.Types exposing (Message(..), User, Channel, Tag(..), Badge(..
 import WebSocket
 
 
+{-| The messages that `MessageLine` responds to.
+
+* `RawMessage`: Receives IRC lines from its websocket. It responds to all IRC lines, and not just the PING.
+-}
 type Msg
     = RawMessage String
 
@@ -28,7 +32,7 @@ render msg receiveUrl mBadges =
                 Err err ->
                     let
                         _ =
-                            Debug.log "PARSE ERR" err
+                            Debug.log "MessageLine PARSE ERR" err
                     in
                         text ""
                             ! []
@@ -49,7 +53,6 @@ spanMessage receiveUrl mBadges message =
             View.viewSub content
                 ! []
 
-        -- Pings are handled in the parent
         Ping content ->
             text ""
                 ! [ WebSocket.send receiveUrl <| "PONG " ++ content ]

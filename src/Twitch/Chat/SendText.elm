@@ -10,7 +10,14 @@ import Twitch.Chat.Parser
 import Twitch.Chat.Types exposing (Message(..), Channel)
 import WebSocket
 
+{-| The messages the chat textarea box responds to.
 
+* `NoOp`: This is the "empty" state change
+* `RawMessage`: Receives IRC lines from the websocket and tries to parse ONLY the PING command to keep the connection alive
+*
+* `UserMessageChanged`: The chat textarea state changes
+* `SubmitUserMessage`: Sending the message in the chat textarea and emptying it
+-}
 type Msg
     = NoOp
     | RawMessage String
