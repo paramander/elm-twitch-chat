@@ -3,6 +3,7 @@ module Twitch.Chat.Badges exposing (..)
 import Dict exposing (Dict)
 import Http
 import Json.Decode as JD exposing (Decoder, (:=))
+import Json.Decode.Extra exposing ((|:))
 import String
 import Task exposing (Task)
 import Twitch.Request as Request
@@ -24,6 +25,7 @@ type alias BadgeSets =
     , mod : BadgeVersions
     , staff : BadgeVersions
     , turbo : BadgeVersions
+    , premium : BadgeVersions
     , subscriber : Maybe BadgeVersions
     }
 
@@ -75,20 +77,21 @@ badgesDecoder decoder =
 
 globalBadgeSetsDecoder : Decoder BadgeSets
 globalBadgeSetsDecoder =
-    JD.object8 BadgeSets
-        ("bits" := badgeVersionsDecoder)
-        ("global_mod" := badgeVersionsDecoder)
-        ("admin" := badgeVersionsDecoder)
-        ("broadcaster" := badgeVersionsDecoder)
-        ("moderator" := badgeVersionsDecoder)
-        ("staff" := badgeVersionsDecoder)
-        ("turbo" := badgeVersionsDecoder)
-        ("subscriber" := JD.succeed Nothing)
+    JD.succeed BadgeSets
+        |: ("bits" := badgeVersionsDecoder)
+        |: ("global_mod" := badgeVersionsDecoder)
+        |: ("admin" := badgeVersionsDecoder)
+        |: ("broadcaster" := badgeVersionsDecoder)
+        |: ("moderator" := badgeVersionsDecoder)
+        |: ("staff" := badgeVersionsDecoder)
+        |: ("turbo" := badgeVersionsDecoder)
+        |: ("premium" := badgeVersionsDecoder)
+        |: ("subscriber" := JD.succeed Nothing)
 
 
 subscriberBadgeSetsDecoder : BadgeSets -> Decoder BadgeSets
 subscriberBadgeSetsDecoder badges =
-    JD.object1 (BadgeSets badges.bits badges.globalMod badges.admin badges.broadcaster badges.mod badges.staff badges.turbo)
+    JD.object1 (BadgeSets badges.bits badges.globalMod badges.admin badges.broadcaster badges.mod badges.staff badges.turbo badges.premium)
         ("subscriber" := JD.maybe badgeVersionsDecoder)
 
 

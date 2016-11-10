@@ -206,6 +206,10 @@ viewBadges badgeSets badges =
                     |> Maybe.withDefault (text "")
                     |> flip (::) (viewBadges badgeSets rest)
 
+            Prime :: rest ->
+                getBadgeVersion "1" badgeSets.premium
+                    :: viewBadges badgeSets rest
+
             Turbo :: rest ->
                 getBadgeVersion "1" badgeSets.turbo
                     :: viewBadges badgeSets rest

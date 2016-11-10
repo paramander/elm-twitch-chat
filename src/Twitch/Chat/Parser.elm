@@ -205,6 +205,7 @@ badge =
             , badgeParser "admin" $> Admin
             , badgeParser "staff" $> Staff
             , badgeParser "global_mod" $> GlobalMod
+            , badgeParser "premium" $> Prime
             , badgeParser "broadcaster" $> Broadcaster
             ]
 

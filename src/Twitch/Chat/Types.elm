@@ -40,6 +40,7 @@ type Badge
     | Turbo
     | Subscriber Int
     | Bits Int
+    | Prime
 
 
 type alias Channel =
