@@ -10,6 +10,7 @@ import Twitch.Chat.Parser
 import Twitch.Chat.Types exposing (Message(..), Channel)
 import WebSocket
 
+
 {-| The messages the chat textarea box responds to.
 
 * `NoOp`: This is the "empty" state change
@@ -162,4 +163,3 @@ preventDefaultOnEnter =
                 else
                     Err "ignore"
             )
-

@@ -2,9 +2,9 @@ module Twitch.Chat.Channel exposing (..)
 
 import Http
 import Json.Decode as JD exposing (Decoder, (:=))
-import Jsonp
 import String
 import Task exposing (Task)
+import Twitch.Request as Request
 
 
 type alias Channel =
@@ -25,7 +25,7 @@ getChannel channelName =
                 ]
 
     in
-        Jsonp.get channelDecoder url
+        Request.attempt channelDecoder url
 
 
 channelDecoder : Decoder Channel

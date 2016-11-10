@@ -4,6 +4,7 @@ import Http
 import Json.Decode as JD exposing (Decoder, (:=))
 import String
 import Task exposing (Task)
+import Twitch.Request as Request
 
 
 type Status
@@ -30,7 +31,7 @@ getProperties channelName =
                 , "chat_properties"
                 ]
     in
-        Http.get decodeProperties url
+        Request.attempt decodeProperties url
 
 
 decodeProperties : Decoder Properties

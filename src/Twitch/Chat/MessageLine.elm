@@ -56,4 +56,3 @@ spanMessage receiveUrl mBadges message =
         Ping content ->
             text ""
                 ! [ WebSocket.send receiveUrl <| "PONG " ++ content ]
-
