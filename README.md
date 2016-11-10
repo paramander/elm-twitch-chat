@@ -51,10 +51,12 @@ If you haven't installed Elm globally yet, make sure to do so
 $ npm install -g elm
 ```
 
-And install this project's Elm dependencies
+And install this project's Elm dependencies using `elm-github-install`. This
+is needed, because `elm-jsonp` is downloaded that exposes Native modules, which
+can't be downloaded from the package server.
 
 ```
-$ elm package install -y
+$ ./node_modules/.bin/elm-github-install
 ```
 
 

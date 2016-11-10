@@ -15,6 +15,7 @@
     "css-loader": "0.23.1",
     "elm-css": "0.5.1",
     "elm-css-webpack-loader": "2.0.1",
+    "elm-github-install": "^0.1.0",
     "elm-hot-loader": "0.3.3",
     "elm-test": "0.17.1",
     "elm-webpack-loader": "3.0.5",
