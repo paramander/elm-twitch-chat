@@ -7,9 +7,12 @@ module Twitch.Chat exposing (Chat, Msg(..), init, update, view, subscriptions)
 @docs Msg, Chat, update, view, subscriptions
 -}
 
+import Dom.Scroll as Scroll
 import Html exposing (..)
 import Html.App
+import Html.Events
 import Http
+import Json.Decode as JD
 import Task exposing (Task)
 import Twitch.Chat.Badges exposing (Badges)
 import Twitch.Chat.Channel
@@ -19,7 +22,6 @@ import Twitch.Chat.MessageLine as MessageLine
 import Twitch.Chat.MessageLine.View as MessageLineView
 import Twitch.Chat.Properties exposing (Properties)
 import Twitch.Chat.SendText as SendText exposing (UserMessage)
-import Twitch.Ports exposing (scrollChat)
 import WebSocket
 
 
@@ -32,6 +34,7 @@ only `Badges` are loaded from the Twitch API.
 * `ServerError`: Respond to HTTP errors when processing `ChatTaskResponse`.
 * `ChildMessageLineMsg`: This is an intermediary type constructor to route `MessageLine.Msg` to its own module
 * `ChildSendTextMsg`: This is an intermediary type constructor to route `SendText.Msg` to its own module
+* `ChatScrolled`: means the user has scrolled the chat div up or down
 -}
 type Msg
     = NoOp
@@ -39,6 +42,7 @@ type Msg
     | ServerError Http.Error
     | ChildMessageLineMsg MessageLine.Msg
     | ChildSendTextMsg SendText.Msg
+    | ChatScrolled OnScrollEvent
 
 
 {-| The model state for Twitch Chat.
@@ -52,6 +56,7 @@ type alias Chat =
     , mBadges : Maybe Badges
     , userMessage : UserMessage
     , messages : List (Html Msg)
+    , shouldScroll : Bool
     }
 
 
@@ -60,6 +65,16 @@ type alias Chat =
 type alias ChatTaskType =
     { channel : Twitch.Chat.Channel.Channel
     , badges : Badges
+    }
+
+
+{-| Convenience type for keeping track of the scroll state of
+chat div.
+-}
+type alias OnScrollEvent =
+    { height : Float
+    , top : Float
+    , clientHeight : Float
     }
 
 
@@ -116,6 +131,7 @@ init username oauth channelName =
             , mBadges = Nothing
             , messages = [ MessageLineView.connectingMessage ]
             , userMessage = userMessage
+            , shouldScroll = False
             }
     in
         model
@@ -168,6 +184,12 @@ update msg model =
             let
                 ( messageHtml, messageCmd ) =
                     MessageLine.render childMsg receiveWsUrl model.mBadges
+
+                scrollCmd =
+                    if model.shouldScroll then
+                        Cmd.none
+                    else
+                        scrollChat
             in
                 { model
                     | messages =
@@ -178,7 +200,7 @@ update msg model =
                             |> dropMessagesIfNeeded
                 }
                     ! [ Cmd.map ChildMessageLineMsg messageCmd
-                      , scrollChat ()
+                      , scrollCmd
                       ]
 
         ChildSendTextMsg childMsg ->
@@ -222,6 +244,12 @@ update msg model =
                 { model | messages = newMessages }
                     ! []
 
+        ChatScrolled event ->
+            { model
+                | shouldScroll = event.top < (event.height * 0.99 - event.clientHeight)
+            }
+                ! []
+
 
 {-| Render the our model state `Chat` in `Html`.
 -}
@@ -237,6 +265,7 @@ view model =
             [ div
                 [ id Css.ChatDiv
                 , class [ Css.ChatMessages ]
+                , onScroll ChatScrolled
                 ]
                 model.messages
             , Html.App.map ChildSendTextMsg (SendText.view model.userMessage)
@@ -250,3 +279,23 @@ dropMessagesIfNeeded list =
         |> List.length
         >> flip (-) 100
         >> flip List.drop list
+
+
+onScroll : (OnScrollEvent -> msg) -> Attribute msg
+onScroll tagger =
+    JD.map tagger onScrollJsonParser
+        |> Html.Events.on "scroll"
+
+
+onScrollJsonParser : JD.Decoder OnScrollEvent
+onScrollJsonParser =
+    JD.object3 OnScrollEvent
+        (JD.at [ "target", "scrollHeight" ] JD.float)
+        (JD.at [ "target", "scrollTop" ] JD.float)
+        (JD.at [ "target", "clientHeight" ] JD.float)
+
+
+scrollChat : Cmd Msg
+scrollChat =
+    Scroll.toBottom (toString Css.ChatDiv)
+        |> Task.perform (always NoOp) (always NoOp)
