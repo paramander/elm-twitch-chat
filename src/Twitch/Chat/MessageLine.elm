@@ -30,12 +30,8 @@ render msg receiveUrl mBadges =
                     spanMessage receiveUrl mBadges message
 
                 Err err ->
-                    let
-                        _ =
-                            Debug.log "MessageLine PARSE ERR" err
-                    in
-                        text ""
-                            ! []
+                    text ""
+                        ! []
 
 
 spanMessage : String -> Maybe Badges -> Message -> ( Html Msg, Cmd Msg )

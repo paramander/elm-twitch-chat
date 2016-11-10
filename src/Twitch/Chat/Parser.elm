@@ -59,7 +59,8 @@ rest =
 
 parse : String -> Result (List String) Message
 parse =
-    Combine.parse message
+    Debug.log "test"
+        >> Combine.parse message
         >> fst
 
 

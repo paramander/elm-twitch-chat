@@ -61,12 +61,8 @@ update msg model =
                         ! [ respondToPing model.sendUrl message ]
 
                 Err err ->
-                    let
-                        _ =
-                            Debug.log "UserMessage PARSE ERR" err
-                    in
-                        model
-                            ! []
+                    model
+                        ! []
 
         UserMessageChanged str ->
             { model | content = str }
