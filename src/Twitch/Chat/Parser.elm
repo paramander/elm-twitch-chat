@@ -167,7 +167,8 @@ privMsgTag =
         <|> mod
         <|> roomId
         <|> subscriber
-        <|> sentTimestamp
+        <|> sentTimestamp "tmi-sent-ts"
+        <|> sentTimestamp "sent-ts"
         <|> turbo
         <|> userId
         <|> userType
@@ -311,9 +312,9 @@ subscriber =
         <$> SubTag
 
 
-sentTimestamp : Parser Tag
-sentTimestamp =
-    string "tmi-sent-ts"
+sentTimestamp : String -> Parser Tag
+sentTimestamp timestampTag =
+    string timestampTag
         *> char '='
         *> int
         <* char ';'
