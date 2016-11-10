@@ -38,7 +38,7 @@ type Badge
     | GlobalMod
     | Moderator
     | Turbo
-    | Subscriber
+    | Subscriber Int
     | Bits Int
 
 

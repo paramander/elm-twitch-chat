@@ -194,10 +194,10 @@ badge : Parser Badge
 badge =
     let
         badgeParser b =
-            string b *> char '/' *> many1 int
+            string b *> char '/' *> int
     in
         choice
-            [ badgeParser "subscriber" $> Subscriber
+            [ badgeParser "subscriber" <$> Subscriber
             , badgeParser "turbo" $> Turbo
             , badgeParser "moderator" $> Moderator
             , string "bits" *> char '/' *> int <$> Bits

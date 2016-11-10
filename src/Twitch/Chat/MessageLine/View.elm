@@ -200,9 +200,9 @@ viewBadges badgeSets badges =
             [] ->
                 [ text "" ]
 
-            Subscriber :: rest ->
+            Subscriber royalty :: rest ->
                 badgeSets.subscriber
-                    |> Maybe.map (getBadgeVersion "1")
+                    |> Maybe.map (getBadgeVersion (toString royalty))
                     |> Maybe.withDefault (text "")
                     |> flip (::) (viewBadges badgeSets rest)
 
