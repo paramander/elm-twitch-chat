@@ -16,6 +16,7 @@ import Json.Decode as JD
 import Task exposing (Task)
 import Twitch.Chat.Badges exposing (Badges)
 import Twitch.Chat.Channel
+import Twitch.Chat.Chatters exposing (Chatter)
 import Twitch.Chat.Css as Css exposing (class, id)
 import Twitch.Chat.Header exposing (Header)
 import Twitch.Chat.MessageLine as MessageLine
@@ -57,6 +58,7 @@ type alias Chat =
     , userMessage : UserMessage
     , messages : List (Html Msg)
     , shouldScroll : Bool
+    , chatters : List Chatter
     }
 
 
@@ -65,6 +67,7 @@ type alias Chat =
 type alias ChatTaskType =
     { channel : Twitch.Chat.Channel.Channel
     , badges : Badges
+    , chatters : Twitch.Chat.Chatters.Response
     }
 
 
@@ -132,6 +135,7 @@ init username oauth channelName =
             , messages = [ MessageLineView.connectingMessage ]
             , userMessage = userMessage
             , shouldScroll = False
+            , chatters = []
             }
     in
         model
@@ -164,10 +168,14 @@ initTasks channelName =
                                     `Task.andThen` \bResult ->
                                                     Twitch.Chat.Badges.getSubscriberBadges aResult bResult
                                 )
+
+        chattersTask =
+            Twitch.Chat.Chatters.getChatters channelName
     in
-        Task.map2 ChatTaskType
+        Task.map3 ChatTaskType
             channelTask
             badgesTask
+            chattersTask
 
 
 {-| Respond to events and model state changes.
@@ -211,7 +219,7 @@ update msg model =
                 { model | userMessage = userMessage }
                     ! [ Cmd.map ChildSendTextMsg userMessageCmd ]
 
-        ChatTaskResponse { badges } ->
+        ChatTaskResponse { badges, chatters } ->
             let
                 joinCommands ip =
                     Cmd.batch
@@ -229,6 +237,7 @@ update msg model =
             in
                 { model
                     | mBadges = Just badges
+                    , chatters = chatters.chatters
                     , messages =
                         List.tail model.messages
                             |> Maybe.withDefault []
