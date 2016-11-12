@@ -67,7 +67,8 @@ parse =
 message : Parser Message
 message =
     choice
-        [ privMessage
+        [ actionMessage
+        , privMessage
         , pingMessage
         , resubMessage
         , subMessage
@@ -80,6 +81,20 @@ pingMessage =
         <* string "PING"
         <* space
         <*> (manyTill anyChar end <$> String.fromList)
+
+
+actionMessage : Parser Message
+actionMessage =
+    succeed ActionMessage
+        <*> privMsgTags
+        <*> commandPrefix
+        <* string "PRIVMSG "
+        <*> channel
+        <* space
+        <* char ':'
+        <* string "\001ACTION"
+        <* space
+        <*> rest
 
 
 privMessage : Parser Message

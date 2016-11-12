@@ -23,7 +23,7 @@ WebSockets.
 - [x] Resubscribe notices
 - [x] Subscribe notices
 - [ ] Timeout/ban actions
-- [ ] `/me` actions
+- [x] `/me` actions
 - [ ] Emote picker
 - [ ] Viewer list
 - [ ] `@` tagging

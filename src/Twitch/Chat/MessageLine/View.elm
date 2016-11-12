@@ -29,6 +29,27 @@ viewMessage badgeResponse tags user content =
         ]
 
 
+viewActionMessage : Maybe Badges -> List Tag -> User -> String -> Html a
+viewActionMessage badgeResponse tags user content =
+    div
+        [ class [ Css.Message, Css.PrivateMessage ]
+        ]
+        [ Maybe.map (badges tags) badgeResponse
+            |> Maybe.withDefault (text "")
+        , span
+            [ class [ Css.From ]
+            , style <| Css.fromStyle tags
+            ]
+            [ chatFrom tags user ]
+        , colon
+        , span
+            [ class [ Css.Content ]
+            , style <| Css.fromStyle tags
+            ]
+            <| chatContent tags content
+        ]
+
+
 viewResub : Maybe Badges -> List Tag -> Channel -> Maybe String -> Html a
 viewResub badgeResponse tags channel mContent =
     div
@@ -150,8 +171,7 @@ spanContentWithEmotes len emotes content =
                 emoteHtml =
                     img
                         [ src <| emoteSrc "1.0"
-                        , srcset
-                            [ emoteSrc "2.0 2x" ]
+                        , srcset [ emoteSrc "2.0 2x" ]
                         , class [ Css.Emote ]
                         ]
                         []
@@ -200,7 +220,7 @@ viewBadges badgeSets badges =
             [] ->
                 [ text "" ]
 
-            Subscriber royalty :: rest ->
+            (Subscriber royalty) :: rest ->
                 badgeSets.subscriber
                     |> Maybe.map (getBadgeVersion (toString royalty))
                     |> Maybe.withDefault (text "")

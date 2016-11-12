@@ -49,6 +49,10 @@ spanMessage receiveUrl mBadges message =
             View.viewSub content
                 ! []
 
+        ActionMessage tags user channel content ->
+            View.viewActionMessage mBadges tags user content
+                ! []
+
         Ping content ->
             text ""
                 ! [ WebSocket.send receiveUrl <| "PONG " ++ content ]

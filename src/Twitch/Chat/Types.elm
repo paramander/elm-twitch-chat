@@ -6,6 +6,7 @@ parsed. JOINs, SERVERMSG and JTV messages are not processed to.
 -}
 type Message
     = PrivateMessage (List Tag) User Channel String
+    | ActionMessage (List Tag) User Channel String
     | Resubscription (List Tag) Channel (Maybe String)
     | Subscription Channel String
     | Ping String
