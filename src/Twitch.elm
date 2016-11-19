@@ -1,10 +1,10 @@
 module Twitch exposing (..)
 
-import Html.App exposing (program)
-import Twitch.Chat
+import Html exposing (program)
+import Twitch.Chat exposing (Chat, Msg)
 
 
-main : Program Never
+main : Program Never Chat Msg
 main =
     program
         { init = Twitch.Chat.init username oauth channel

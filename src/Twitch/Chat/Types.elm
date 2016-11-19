@@ -1,18 +1,19 @@
 module Twitch.Chat.Types exposing (..)
 
-
 {-| The `Message`s we process from IRC. Right now, only PRIVMSG and PING are
 parsed. JOINs, SERVERMSG and JTV messages are not processed to.
 -}
+
+
 type Message
     = PrivateMessage (List Tag) User Channel String
     | ActionMessage (List Tag) User Channel String
     | Resubscription (List Tag) Channel (Maybe String)
     | Subscription Channel String
     | Ping String
-    -- | ServerMessage (Maybe Channel) Int String
-    -- | JtvCommand Command String
-    -- | JtvMode User Channel Mode
+--   | ServerMessage (Maybe Channel) Int String
+--   | JtvCommand Command String
+--   | JtvMode User Channel Mode
 
 
 type Tag
