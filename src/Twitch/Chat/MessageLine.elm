@@ -29,7 +29,7 @@ render msg receiveUrl mBadges =
                 Ok message ->
                     spanMessage receiveUrl mBadges message
 
-                Err err ->
+                Err _ ->
                     text ""
                         ! []
 

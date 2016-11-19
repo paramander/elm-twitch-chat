@@ -1,7 +1,7 @@
 module Twitch.Chat.Properties exposing (..)
 
 import Http
-import Json.Decode as JD exposing (Decoder, (:=))
+import Json.Decode as JD exposing (Decoder, field)
 import String
 import Task exposing (Task)
 import Twitch.Request as Request
@@ -36,8 +36,8 @@ getProperties channelName =
 
 decodeProperties : Decoder Properties
 decodeProperties =
-    JD.object4 Properties
-        ("subsonly" := JD.bool)
-        ("chat_servers" := JD.list JD.string)
-        ("web_socket_servers" := JD.list JD.string)
+    JD.map4 Properties
+        (field "subsonly" JD.bool)
+        (field "chat_servers" <| JD.list JD.string)
+        (field "web_socket_servers" <| JD.list JD.string)
         (JD.succeed Loaded)

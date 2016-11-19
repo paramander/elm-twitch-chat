@@ -2,7 +2,7 @@ module Twitch.Chat.Badges exposing (..)
 
 import Dict exposing (Dict)
 import Http
-import Json.Decode as JD exposing (Decoder, (:=))
+import Json.Decode as JD exposing (Decoder, field)
 import Json.Decode.Extra exposing ((|:))
 import String
 import Task exposing (Task)
@@ -71,28 +71,28 @@ getBadges channelId decoder =
 
 badgesDecoder : Decoder BadgeSets -> Decoder Badges
 badgesDecoder decoder =
-    JD.object1 Badges
-        ("badge_sets" := decoder)
+    JD.map Badges
+        (field "badge_sets" decoder)
 
 
 globalBadgeSetsDecoder : Decoder BadgeSets
 globalBadgeSetsDecoder =
     JD.succeed BadgeSets
-        |: ("bits" := badgeVersionsDecoder)
-        |: ("global_mod" := badgeVersionsDecoder)
-        |: ("admin" := badgeVersionsDecoder)
-        |: ("broadcaster" := badgeVersionsDecoder)
-        |: ("moderator" := badgeVersionsDecoder)
-        |: ("staff" := badgeVersionsDecoder)
-        |: ("turbo" := badgeVersionsDecoder)
-        |: ("premium" := badgeVersionsDecoder)
-        |: ("subscriber" := JD.succeed Nothing)
+        |: (field "bits" badgeVersionsDecoder)
+        |: (field "global_mod" badgeVersionsDecoder)
+        |: (field "admin" badgeVersionsDecoder)
+        |: (field "broadcaster" badgeVersionsDecoder)
+        |: (field "moderator" badgeVersionsDecoder)
+        |: (field "staff" badgeVersionsDecoder)
+        |: (field "turbo" badgeVersionsDecoder)
+        |: (field "premium" badgeVersionsDecoder)
+        |: (field "subscriber" <| JD.succeed Nothing)
 
 
 subscriberBadgeSetsDecoder : BadgeSets -> Decoder BadgeSets
 subscriberBadgeSetsDecoder badges =
-    JD.object1 (BadgeSets badges.bits badges.globalMod badges.admin badges.broadcaster badges.mod badges.staff badges.turbo badges.premium)
-        ("subscriber" := JD.maybe badgeVersionsDecoder)
+    JD.map (BadgeSets badges.bits badges.globalMod badges.admin badges.broadcaster badges.mod badges.staff badges.turbo badges.premium)
+        (field "subscriber" <| JD.maybe badgeVersionsDecoder)
 
 
 badgeVersionsDecoder : Decoder BadgeVersions
@@ -102,11 +102,11 @@ badgeVersionsDecoder =
 
 badgePropertiesDecoder : Decoder BadgeProperties
 badgePropertiesDecoder =
-    JD.object7 BadgeProperties
-        ("image_url_1x" := JD.string)
-        ("image_url_2x" := JD.string)
-        ("image_url_4x" := JD.string)
-        ("description" := JD.string)
-        ("title" := JD.string)
-        ("click_action" := JD.string)
-        ("click_url" := JD.string)
+    JD.map7 BadgeProperties
+        (field "image_url_1x" JD.string)
+        (field "image_url_2x" JD.string)
+        (field "image_url_4x" JD.string)
+        (field "description" JD.string)
+        (field "title" JD.string)
+        (field "click_action" JD.string)
+        (field "click_url" JD.string)

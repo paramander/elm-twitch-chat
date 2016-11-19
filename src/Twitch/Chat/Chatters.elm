@@ -5,7 +5,7 @@ fetch current users in a channel.
 -}
 
 import Http
-import Json.Decode as JD exposing (Decoder, (:=))
+import Json.Decode as JD exposing (Decoder, field)
 import String
 import Twitch.Request as Request
 import Task exposing (Task)
@@ -36,17 +36,18 @@ getChatters channelName =
 
 responseDecoder : Decoder Response
 responseDecoder =
-    JD.object2 Response
-        ("chatter_count" := JD.int)
-        <| "chatters"
-        := (chattersDecoder "moderators"
-                `JD.andThen` (\prev -> JD.map (\staff -> prev ++ staff) (chattersDecoder "staff"))
-                `JD.andThen` (\prev -> JD.map (\admins -> prev ++ admins) (chattersDecoder "admins"))
-                `JD.andThen` (\prev -> JD.map (\globalMods -> prev ++ globalMods) (chattersDecoder "global_mods"))
-                `JD.andThen` (\prev -> JD.map (\viewers -> prev ++ viewers) (chattersDecoder "viewers"))
-           )
+    JD.map2 Response
+        (field "chatter_count" JD.int)
+    <|
+        field "chatters"
+            (chattersDecoder "moderators"
+                |> JD.andThen (\prev -> JD.map (\staff -> prev ++ staff) (chattersDecoder "staff"))
+                |> JD.andThen (\prev -> JD.map (\admins -> prev ++ admins) (chattersDecoder "admins"))
+                |> JD.andThen (\prev -> JD.map (\globalMods -> prev ++ globalMods) (chattersDecoder "global_mods"))
+                |> JD.andThen (\prev -> JD.map (\viewers -> prev ++ viewers) (chattersDecoder "viewers"))
+            )
 
 
 chattersDecoder : String -> Decoder (List Chatter)
 chattersDecoder key =
-    (key := JD.list JD.string)
+    (field key <| JD.list JD.string)

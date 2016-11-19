@@ -149,13 +149,14 @@ the enter button does not work. So two events are used for this: `keydown` and `
 -}
 preventDefaultOnEnter : Attribute Msg
 preventDefaultOnEnter =
-    onWithOptions "keypress"
-        { stopPropagation = False, preventDefault = True }
-        <| JD.map (always NoOp)
-        <| JD.customDecoder keyCode
+    keyCode
+        |> JD.andThen
             (\code ->
                 if code == 13 then
-                    Ok code
+                    JD.succeed code
                 else
-                    Err "ignore"
+                    JD.fail "ignore"
             )
+        |> JD.map (always NoOp)
+        |> onWithOptions "keypress"
+            { stopPropagation = False, preventDefault = True }

@@ -25,7 +25,8 @@ viewMessage badgeResponse tags user content =
         , span
             [ class [ Css.Content ]
             ]
-            <| chatContent tags content
+          <|
+            chatContent tags content
         ]
 
 
@@ -46,7 +47,8 @@ viewActionMessage badgeResponse tags user content =
             [ class [ Css.Content ]
             , style <| Css.fromStyle tags
             ]
-            <| chatContent tags content
+          <|
+            chatContent tags content
         ]
 
 
@@ -55,25 +57,27 @@ viewResub badgeResponse tags channel mContent =
     div
         [ class [ Css.Message, Css.ResubMessage ]
         ]
-        <| systemMessage tags
-        :: case mContent of
-            Nothing ->
-                [ text "" ]
+    <|
+        systemMessage tags
+            :: case mContent of
+                Nothing ->
+                    [ text "" ]
 
-            Just content ->
-                [ Maybe.map (badges tags) badgeResponse
-                    |> Maybe.withDefault (text "")
-                , span
-                    [ class [ Css.From ]
-                    , style <| Css.fromStyle tags
+                Just content ->
+                    [ Maybe.map (badges tags) badgeResponse
+                        |> Maybe.withDefault (text "")
+                    , span
+                        [ class [ Css.From ]
+                        , style <| Css.fromStyle tags
+                        ]
+                        [ chatFrom tags "" ]
+                    , colon
+                    , span
+                        [ class [ Css.Content ]
+                        ]
+                      <|
+                        chatContent tags content
                     ]
-                    [ chatFrom tags "" ]
-                , colon
-                , span
-                    [ class [ Css.Content ]
-                    ]
-                    <| chatContent tags content
-                ]
 
 
 viewSub : String -> Html a

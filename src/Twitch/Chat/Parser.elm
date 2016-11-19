@@ -2,7 +2,6 @@ module Twitch.Chat.Parser exposing (..)
 
 import Combine exposing (..)
 import Combine.Char exposing (..)
-import Combine.Infix exposing ((<*>), (<*), (*>), (<$), (<|>))
 import Combine.Num exposing (..)
 import String
 import Twitch.Chat.Types
@@ -36,35 +35,44 @@ type alias EmoteOccurence =
     }
 
 
-(<$>) : Parser a -> (a -> b) -> Parser b
+(<$>) : Parser s a -> (a -> b) -> Parser s b
 (<$>) =
     flip Combine.map
 
 
-($>) : Parser a -> b -> Parser b
+($>) : Parser s a -> b -> Parser s b
 ($>) =
     flip (<$)
 
 
-bool : Parser Bool
+bool : Parser s Bool
 bool =
     int <$> ((==) 1)
 
 
-rest : Parser String
+rest : Parser s String
 rest =
     manyTill anyChar end
         <$> String.fromList
 
 
-parse : String -> Result (List String) Message
-parse =
-    Debug.log "test"
-        >> Combine.parse message
-        >> fst
+parse : String -> Result String Message
+parse ircMessage =
+    case Combine.parse message ircMessage of
+        Ok (_, _, m) ->
+            Ok m
+
+        Err (_, stream, ms) ->
+            String.join ""
+                [ toString ms
+                , ", "
+                , toString stream
+                ]
+                |> Debug.log "parse error"
+                |> Err
 
 
-message : Parser Message
+message : Parser s Message
 message =
     choice
         [ actionMessage
@@ -75,7 +83,7 @@ message =
         ]
 
 
-pingMessage : Parser Message
+pingMessage : Parser s Message
 pingMessage =
     succeed Ping
         <* string "PING"
@@ -83,7 +91,7 @@ pingMessage =
         <*> (manyTill anyChar end <$> String.fromList)
 
 
-actionMessage : Parser Message
+actionMessage : Parser s Message
 actionMessage =
     succeed ActionMessage
         <*> privMsgTags
@@ -92,12 +100,12 @@ actionMessage =
         <*> channel
         <* space
         <* char ':'
-        <* string "\001ACTION"
+        <* string "\x01ACTION"
         <* space
         <*> rest
 
 
-privMessage : Parser Message
+privMessage : Parser s Message
 privMessage =
     succeed PrivateMessage
         <*> privMsgTags
@@ -109,7 +117,7 @@ privMessage =
         <*> rest
 
 
-resubMessage : Parser Message
+resubMessage : Parser s Message
 resubMessage =
     succeed Resubscription
         <*> userStateTags
@@ -120,8 +128,11 @@ resubMessage =
         <*> maybe (space <* char ':' *> rest)
 
 
+
 -- ":twitchnotify!twitchnotify@twitchnotify.tmi.twitch.tv PRIVMSG #lirik :LegalizeDragonDildos just subscribed!\r\n"
-subMessage : Parser Message
+
+
+subMessage : Parser s Message
 subMessage =
     succeed Subscription
         <* string ":twitchnotify!twitchnotify@twitchnotify.tmi.twitch.tv"
@@ -133,23 +144,23 @@ subMessage =
         <*> rest
 
 
-nickname : Parser String
+nickname : Parser s String
 nickname =
     many (regex "[a-zA-Z0-9]" <|> string "_") <$> String.concat
 
 
-username : Parser User
+username : Parser s User
 username =
     nickname
 
 
-channel : Parser Channel
+channel : Parser s Channel
 channel =
     char '#'
         *> nickname
 
 
-commandPrefix : Parser User
+commandPrefix : Parser s User
 commandPrefix =
     char ':'
         *> nickname
@@ -162,17 +173,17 @@ commandPrefix =
         <* space
 
 
-privMsgTags : Parser (List Tag)
+privMsgTags : Parser s (List Tag)
 privMsgTags =
     manyTill privMsgTag (char ' ')
 
 
-userStateTags : Parser (List Tag)
+userStateTags : Parser s (List Tag)
 userStateTags =
     manyTill userStateTag (char ' ')
 
 
-privMsgTag : Parser Tag
+privMsgTag : Parser s Tag
 privMsgTag =
     badges
         <|> bits
@@ -190,7 +201,7 @@ privMsgTag =
         <|> userType
 
 
-userStateTag : Parser Tag
+userStateTag : Parser s Tag
 userStateTag =
     privMsgTag
         <|> msgId
@@ -199,7 +210,7 @@ userStateTag =
         <|> login
 
 
-badges : Parser Tag
+badges : Parser s Tag
 badges =
     string "@badges"
         *> char '='
@@ -208,7 +219,7 @@ badges =
         <$> Badges
 
 
-badge : Parser Badge
+badge : Parser s Badge
 badge =
     let
         badgeParser b =
@@ -227,7 +238,7 @@ badge =
             ]
 
 
-bits : Parser Tag
+bits : Parser s Tag
 bits =
     string "bits"
         *> char '='
@@ -236,7 +247,7 @@ bits =
         <$> BitsTag
 
 
-color : Parser Tag
+color : Parser s Tag
 color =
     string "color"
         *> char '='
@@ -245,7 +256,7 @@ color =
         <$> Color
 
 
-displayName : Parser Tag
+displayName : Parser s Tag
 displayName =
     string "display-name"
         *> char '='
@@ -253,7 +264,7 @@ displayName =
         <$> DisplayName
 
 
-emotes : Parser Tag
+emotes : Parser s Tag
 emotes =
     string "emotes"
         *> char '='
@@ -277,7 +288,7 @@ transformEmotes parsedEmotes =
                 :: transformEmotes rest
 
 
-emote : Parser ParsedEmote
+emote : Parser s ParsedEmote
 emote =
     succeed ParsedEmote
         <*> int
@@ -285,7 +296,7 @@ emote =
         <*> sepBy (char ',') emoteOccurence
 
 
-emoteOccurence : Parser EmoteOccurence
+emoteOccurence : Parser s EmoteOccurence
 emoteOccurence =
     succeed EmoteOccurence
         <*> int
@@ -293,7 +304,7 @@ emoteOccurence =
         <*> int
 
 
-id : Parser Tag
+id : Parser s Tag
 id =
     string "id"
         *> char '='
@@ -301,7 +312,7 @@ id =
         <$> (String.fromList >> Id)
 
 
-mod : Parser Tag
+mod : Parser s Tag
 mod =
     string "mod"
         *> char '='
@@ -310,7 +321,7 @@ mod =
         <$> ModTag
 
 
-roomId : Parser Tag
+roomId : Parser s Tag
 roomId =
     string "room-id"
         *> char '='
@@ -319,7 +330,7 @@ roomId =
         <$> RoomId
 
 
-subscriber : Parser Tag
+subscriber : Parser s Tag
 subscriber =
     string "subscriber"
         *> char '='
@@ -328,7 +339,7 @@ subscriber =
         <$> SubTag
 
 
-sentTimestamp : String -> Parser Tag
+sentTimestamp : String -> Parser s Tag
 sentTimestamp timestampTag =
     string timestampTag
         *> char '='
@@ -337,7 +348,7 @@ sentTimestamp timestampTag =
         <$> always None
 
 
-turbo : Parser Tag
+turbo : Parser s Tag
 turbo =
     string "turbo"
         *> char '='
@@ -346,7 +357,7 @@ turbo =
         <$> TurboTag
 
 
-userId : Parser Tag
+userId : Parser s Tag
 userId =
     string "user-id"
         *> char '='
@@ -355,7 +366,7 @@ userId =
         <$> UserId
 
 
-userType : Parser Tag
+userType : Parser s Tag
 userType =
     let
         userTypes =
@@ -371,7 +382,7 @@ userType =
             <$> UserType
 
 
-systemMsg : Parser Tag
+systemMsg : Parser s Tag
 systemMsg =
     string "system-msg"
         *> char '='
@@ -379,7 +390,7 @@ systemMsg =
         <$> (String.fromList >> String.split "\\s" >> String.join " " >> System)
 
 
-login : Parser Tag
+login : Parser s Tag
 login =
     string "login"
         *> char '='
@@ -388,7 +399,7 @@ login =
         <$> always None
 
 
-msgId : Parser Tag
+msgId : Parser s Tag
 msgId =
     string "msg-id"
         *> char '='
@@ -397,7 +408,7 @@ msgId =
         <$> always None
 
 
-msgParamMonths : Parser Tag
+msgParamMonths : Parser s Tag
 msgParamMonths =
     string "msg-param-months"
         *> char '='
