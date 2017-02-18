@@ -6,6 +6,7 @@ import Html exposing (..)
 import Html.Attributes exposing (placeholder, tabindex, value)
 import Html.Events exposing (keyCode, on, onClick, onInput, onMouseEnter, onWithOptions)
 import Json.Decode as JD
+import Json.Decode.Extra as JDE
 import Regex exposing (Regex)
 import Twitch.Chat.Chatters exposing (Chatter)
 import Twitch.Chat.Css as Css exposing (class, id)
@@ -220,6 +221,7 @@ view model =
             ]
             [ div
                 [ class [ Css.TextareaContain ]
+                , preventTab
                 ]
                 [ viewChatbox model.content
                 , autocompleter
@@ -285,11 +287,31 @@ respondToPing sendUrl message =
 
 onEnter : Msg -> Attribute Msg
 onEnter msg =
-    onKey 13 msg
+    onKey 13 { stopPropagation = False, preventDefault = False } msg
 
 
-onKey : KeyCode -> Msg -> Attribute Msg
-onKey key msg =
+preventTab : Attribute Msg
+preventTab =
+    let
+        options =
+            { stopPropagation = False, preventDefault = True }
+
+        filterKey code =
+            if code == 9 then
+                Ok code
+            else
+                Err "ignored input"
+
+        decoder =
+            keyCode
+                |> JD.andThen (filterKey >> JDE.fromResult)
+                |> JD.map (always NoOp)
+    in
+        onWithOptions "keydown" options decoder
+
+
+onKey : KeyCode -> Html.Events.Options -> Msg -> Attribute Msg
+onKey key options msg =
     let
         isKey code =
             if code == key then
@@ -297,7 +319,9 @@ onKey key msg =
             else
                 NoOp
     in
-        on "keydown"
+        onWithOptions
+            "keydown"
+            options
             (JD.map isKey keyCode)
 
 
