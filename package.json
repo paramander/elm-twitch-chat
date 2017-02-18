@@ -16,11 +16,10 @@
     "elm-css": "0.6.0",
     "elm-css-webpack-loader": "2.0.2",
     "elm-github-install": "^0.1.0",
-    "elm-hot-loader": "0.4.0",
-    "elm-webpack-loader": "3.0.6",
-    "extract-text-webpack-plugin": "1.0.1",
+    "elm-hot-loader": "^0.5.4",
+    "elm-webpack-loader": "^4.1.1",
+    "extract-text-webpack-plugin": "^1.0.1",
     "file-loader": "0.9.0",
-    "font-awesome": "4.6.3",
     "html-webpack-plugin": "2.22.0",
     "postcss-loader": "0.10.0",
     "rimraf": "2.5.3",
@@ -28,6 +27,6 @@
     "unminified-webpack-plugin": "1.1.0",
     "webpack": "1.13.1",
     "webpack-dev-server": "1.14.1",
-    "webpack-merge": "0.14.0"
+    "webpack-merge": "^2.4.0"
   }
 }
