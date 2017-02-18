@@ -236,10 +236,14 @@ update msg model =
                     [ joinCommands sendWsUrl
                     , joinCommands receiveWsUrl
                     ]
+
+                sendTextModel =
+                    model.userMessage
             in
                 { model
                     | mBadges = Just badges
                     , chatters = chatters.chatters
+                    , userMessage = { sendTextModel | chatters = chatters.chatters }
                     , messages =
                         List.tail model.messages
                             |> Maybe.withDefault []

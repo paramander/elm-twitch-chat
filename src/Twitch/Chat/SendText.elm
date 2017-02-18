@@ -1,13 +1,16 @@
 module Twitch.Chat.SendText exposing (..)
 
+import Autocomplete
+import Char exposing (KeyCode)
 import Html exposing (..)
-import Html.Attributes exposing (placeholder, value)
-import Html.Events exposing (on, onInput, onClick, onWithOptions, keyCode)
+import Html.Attributes exposing (placeholder, tabindex, value)
+import Html.Events exposing (keyCode, on, onClick, onInput, onMouseEnter, onWithOptions)
 import Json.Decode as JD
-import String
-import Twitch.Chat.Css as Css exposing (id, class)
+import Regex exposing (Regex)
+import Twitch.Chat.Chatters exposing (Chatter)
+import Twitch.Chat.Css as Css exposing (class, id)
 import Twitch.Chat.Parser
-import Twitch.Chat.Types exposing (Message(..), Channel)
+import Twitch.Chat.Types exposing (Channel, Message(..))
 import WebSocket
 
 
@@ -24,18 +27,27 @@ type Msg
     | RawMessage String
     | UserMessageChanged String
     | SubmitUserMessage
+    | SetAutocompleteState Autocomplete.Msg
+    | SelectPerson Chatter
+    | Reset Bool
 
 
 type alias UserMessage =
     { content : String
     , sendUrl : String
     , channelName : Channel
+    , chatters : List Chatter
+    , autoState : Autocomplete.State
+    , showSuggestions : Bool
     }
 
 
 subscriptions : UserMessage -> Sub Msg
 subscriptions model =
-    WebSocket.listen model.sendUrl RawMessage
+    Sub.batch
+        [ WebSocket.listen model.sendUrl RawMessage
+        , Sub.map SetAutocompleteState Autocomplete.subscription
+        ]
 
 
 init : String -> Channel -> ( UserMessage, Cmd Msg )
@@ -43,6 +55,9 @@ init sendUrl channelName =
     { content = ""
     , sendUrl = sendUrl
     , channelName = channelName
+    , chatters = []
+    , autoState = Autocomplete.empty
+    , showSuggestions = False
     }
         ! []
 
@@ -65,8 +80,17 @@ update msg model =
                         ! []
 
         UserMessageChanged str ->
-            { model | content = str }
-                ! []
+            let
+                isTypingMention =
+                    extractMention str
+                        |> String.isEmpty
+                        >> not
+            in
+                { model
+                    | content = str
+                    , showSuggestions = isTypingMention
+                }
+                    ! []
 
         SubmitUserMessage ->
             let
@@ -78,22 +102,149 @@ update msg model =
                         , model.content
                         ]
             in
-                { model | content = "" }
+                { model
+                    | content = ""
+                    , autoState = Autocomplete.empty
+                    , showSuggestions = False
+                }
                     ! [ WebSocket.send model.sendUrl message ]
+
+        SetAutocompleteState autoMsg ->
+            let
+                ( newState, maybeMsg ) =
+                    Autocomplete.update updateConfig autoMsg 5 model.autoState (acceptablePeople (extractMention model.content) model.chatters)
+
+                newModel =
+                    { model | autoState = newState }
+            in
+                case maybeMsg of
+                    Nothing ->
+                        newModel ! []
+
+                    Just updateMsg ->
+                        update updateMsg newModel
+
+        SelectPerson autocompletedPerson ->
+            let
+                typedMention =
+                    extractMention model.content
+
+                dropMention =
+                    String.dropRight (String.length typedMention) model.content
+            in
+                { model
+                    | content = dropMention ++ autocompletedPerson
+                    , autoState = Autocomplete.empty
+                    , showSuggestions = False
+                }
+                    ! []
+
+        Reset toTop ->
+            { model
+                | autoState =
+                    if toTop then
+                        Autocomplete.resetToFirstItem updateConfig (acceptablePeople (extractMention model.content) model.chatters) 5 model.autoState
+                    else
+                        Autocomplete.resetToLastItem updateConfig (acceptablePeople (extractMention model.content) model.chatters) 5 model.autoState
+            }
+                ! []
+
+
+acceptablePeople : String -> List Chatter -> List Chatter
+acceptablePeople query chatters =
+    let
+        lowerQuery =
+            String.toLower query
+    in
+        List.filter (String.contains lowerQuery << String.toLower) chatters
+
+
+updateConfig : Autocomplete.UpdateConfig Msg Chatter
+updateConfig =
+    Autocomplete.updateConfig
+        { toId = identity
+        , onKeyDown = onSubmitAutocomplete
+        , onTooLow = Nothing
+        , onTooHigh = Nothing
+        , onMouseEnter = always Nothing
+        , onMouseLeave = always Nothing
+        , onMouseClick = Just << SelectPerson
+        , separateSelections = False
+        }
+
+
+viewConfig : Autocomplete.ViewConfig Chatter
+viewConfig =
+    let
+        customizedLi keySelected mouseSelected chatter =
+            { attributes =
+                [ if keySelected || mouseSelected then
+                    class [ Css.Highlighted, Css.Suggestion ]
+                  else
+                    class [ Css.Suggestion ]
+                ]
+            , children =
+                [ text chatter ]
+            }
+    in
+        Autocomplete.viewConfig
+            { toId = identity
+            , ul = [ class [ Css.Suggestions ] ]
+            , li = customizedLi
+            }
+
+
+onSubmitAutocomplete : KeyCode -> Maybe Chatter -> Maybe Msg
+onSubmitAutocomplete code maybeId =
+    if code == 38 || code == 40 then
+        -- Up or Down
+        Nothing
+    else if code == 13 || code == 9 then
+        -- Enter or Tab
+        Maybe.map SelectPerson maybeId
+    else
+        Just <| Reset False
 
 
 view : UserMessage -> Html Msg
 view model =
-    div
-        [ class [ Css.ChatInterface ]
-        ]
-        [ div
-            [ class [ Css.TextareaContain ]
+    let
+        autocompleter =
+            if model.showSuggestions then
+                viewAutocompleter model
+            else
+                text ""
+    in
+        div
+            [ class [ Css.ChatInterface ]
             ]
-            [ viewChatbox model.content
+            [ div
+                [ class [ Css.TextareaContain ]
+                ]
+                [ viewChatbox model.content
+                , autocompleter
+                ]
+            , viewChatButtons
             ]
-        , viewChatButtons
-        ]
+
+
+extractMention : String -> String
+extractMention content =
+    let
+        regex =
+            Regex.regex "@(\\S+)$"
+                |> Regex.caseInsensitive
+    in
+        Regex.find (Regex.AtMost 1) regex content
+            |> List.head
+            |> Maybe.map .match
+            |> Maybe.map (String.dropLeft 1)
+            |> Maybe.withDefault ""
+
+
+viewAutocompleter : UserMessage -> Html Msg
+viewAutocompleter model =
+    Html.map SetAutocompleteState (Autocomplete.view viewConfig 5 model.autoState (acceptablePeople (extractMention model.content) model.chatters))
 
 
 viewChatbox : String -> Html Msg
@@ -116,6 +267,7 @@ viewChatButtons =
         [ button
             [ class [ Css.Submit ]
             , onClick SubmitUserMessage
+            , tabindex -1
             ]
             [ text "Chat" ]
         ]
@@ -133,15 +285,20 @@ respondToPing sendUrl message =
 
 onEnter : Msg -> Attribute Msg
 onEnter msg =
+    onKey 13 msg
+
+
+onKey : KeyCode -> Msg -> Attribute Msg
+onKey key msg =
     let
-        isEnter code =
-            if code == 13 then
+        isKey code =
+            if code == key then
                 msg
             else
                 NoOp
     in
         on "keydown"
-            (JD.map isEnter keyCode)
+            (JD.map isKey keyCode)
 
 
 {-| A workaround to the bug in `elm-lang/virtual-dom` where capturing
@@ -152,8 +309,8 @@ preventDefaultOnEnter =
     keyCode
         |> JD.andThen
             (\code ->
-                if code == 13 then
-                    JD.succeed code
+                if code == 13 || code == 9 then
+                    JD.succeed <| code
                 else
                     JD.fail "ignore"
             )

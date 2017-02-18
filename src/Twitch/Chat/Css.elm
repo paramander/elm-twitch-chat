@@ -40,6 +40,9 @@ type Classes
     | Emote
     | BalloonWrapper
     | BalloonTooltip
+    | Suggestions
+    | Highlighted
+    | Suggestion
 
 
 zIndex : Int -> Mixin
@@ -274,6 +277,29 @@ css =
             , textAlign left
             , zIndex 99999
             , position absolute
+            ]
+        , (.) Suggestions
+            [ zIndex 1000
+            , padding2 (px 5) zero
+            , position absolute
+            , bottom (px 43)
+            , left (px 6)
+            , width (px 278)
+            , backgroundColor (hex "#ffffff")
+            , border3 (px 1) solid (rgba 0 0 0 0.2)
+            , backgroundClip paddingBox
+            , descendants
+                [ (.) Suggestion
+                    [ padding2 zero (px 10)
+                    , lineHeight (px 24)
+                    , width (px 270)
+                    , fontSize (px 12)
+                    , withClass (Highlighted)
+                        [ color (hex "#ffffff")
+                        , backgroundColor (hex "#6441a4")
+                        ]
+                    ]
+                ]
             ]
         ]
 

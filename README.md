@@ -26,7 +26,7 @@ WebSockets.
 - [x] `/me` actions
 - [ ] Emote picker
 - [ ] Viewer list
-- [ ] `@` tagging
+- [x] `@` tagging
 
 ## JSONP
 
