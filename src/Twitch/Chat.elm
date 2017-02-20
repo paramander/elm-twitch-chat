@@ -10,6 +10,7 @@ module Twitch.Chat exposing (Chat, Msg(..), init, update, view, subscriptions)
 import Dom.Scroll as Scroll
 import Html exposing (..)
 import Html.Events
+import Html.Keyed
 import Http
 import Json.Decode as JD
 import Task exposing (Task)
@@ -18,10 +19,10 @@ import Twitch.Chat.Channel
 import Twitch.Chat.Chatters exposing (Chatter)
 import Twitch.Chat.Css as Css exposing (class, id)
 import Twitch.Chat.Header exposing (Header)
-import Twitch.Chat.MessageLine as MessageLine
-import Twitch.Chat.MessageLine.View as MessageLineView
+import Twitch.Chat.MessageLine as MessageLine exposing (takeMessageId)
 import Twitch.Chat.Properties exposing (Properties)
 import Twitch.Chat.SendText as SendText exposing (UserMessage)
+import Twitch.Chat.Types exposing (Message(SystemMessage))
 import WebSocket
 
 
@@ -54,7 +55,7 @@ type alias Chat =
     , mProperties : Maybe Properties
     , mBadges : Maybe Badges
     , userMessage : UserMessage
-    , messages : List (Html Msg)
+    , chatMessages : List Message
     , shouldScroll : Bool
     , chatters : List Chatter
     }
@@ -130,10 +131,10 @@ init username oauth channelName =
             , header = header
             , mProperties = Nothing
             , mBadges = Nothing
-            , messages = [ MessageLineView.connectingMessage ]
             , userMessage = userMessage
             , shouldScroll = False
             , chatters = []
+            , chatMessages = [ SystemMessage "Connecting to chat room..." ]
             }
     in
         model
@@ -192,8 +193,8 @@ update msg model =
 
         ChildMessageLineMsg childMsg ->
             let
-                ( messageHtml, messageCmd ) =
-                    MessageLine.render childMsg receiveWsUrl model.mBadges
+                ( message, messageCmd ) =
+                    MessageLine.update childMsg receiveWsUrl
 
                 scrollCmd =
                     if model.shouldScroll then
@@ -202,11 +203,9 @@ update msg model =
                         scrollChat
             in
                 { model
-                    | messages =
-                        Html.map ChildMessageLineMsg messageHtml
-                            |> (\mappedMessageHtml ->
-                                    model.messages ++ [ mappedMessageHtml ]
-                               )
+                    | chatMessages =
+                        model.chatMessages
+                            ++ [ message ]
                             |> dropMessagesIfNeeded
                 }
                     ! [ Cmd.map ChildMessageLineMsg messageCmd
@@ -244,19 +243,19 @@ update msg model =
                     | mBadges = Just badges
                     , chatters = chatters.chatters
                     , userMessage = { sendTextModel | chatters = chatters.chatters }
-                    , messages =
-                        List.tail model.messages
+                    , chatMessages =
+                        List.tail model.chatMessages
                             |> Maybe.withDefault []
-                            |> (::) MessageLineView.connectedLine
+                            |> (::) (SystemMessage "Connected to chat room.")
                 }
                     ! loginCmds
 
         ChatTaskResponse (Err err) ->
             let
                 newMessages =
-                    model.messages ++ [ Html.text <| toString err ]
+                    model.chatMessages ++ [ SystemMessage <| toString err ]
             in
-                { model | messages = newMessages }
+                { model | chatMessages = newMessages }
                     ! []
 
         ChatScrolled event ->
@@ -277,12 +276,15 @@ view model =
         , div
             [ class [ Css.ChatRoom ]
             ]
-            [ div
+            [ Html.Keyed.node "div"
                 [ id Css.ChatDiv
                 , class [ Css.ChatMessages ]
                 , onScroll ChatScrolled
                 ]
-                model.messages
+                (List.map
+                    (MessageLine.view receiveWsUrl model.mBadges)
+                    model.chatMessages
+                )
             , Html.map ChildSendTextMsg (SendText.view model.userMessage)
             ]
         ]

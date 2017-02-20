@@ -1,10 +1,10 @@
 module Twitch.Chat.MessageLine exposing (..)
 
 import Html exposing (..)
-import Twitch.Chat.Badges exposing (Badges, BadgeSets, BadgeProperties)
+import Twitch.Chat.Badges exposing (BadgeProperties, BadgeSets, Badges)
 import Twitch.Chat.MessageLine.View as View
 import Twitch.Chat.Parser
-import Twitch.Chat.Types exposing (Message(..), User, Channel, Tag(..), Badge(..), Emote)
+import Twitch.Chat.Types exposing (Badge(..), Channel, Emote, Message(..), Tag(..), User)
 import WebSocket
 
 
@@ -21,38 +21,88 @@ subscriptions receiveUrl =
     WebSocket.listen receiveUrl RawMessage
 
 
-render : Msg -> String -> Maybe Badges -> ( Html Msg, Cmd Msg )
-render msg receiveUrl mBadges =
+update : Msg -> String -> ( Message, Cmd Msg )
+update msg receiveUrl =
     case msg of
         RawMessage str ->
-            case Twitch.Chat.Parser.parse str of
-                Ok message ->
-                    spanMessage receiveUrl mBadges message
+            let
+                parsedMessage =
+                    Twitch.Chat.Parser.parse str
+                        |> Result.withDefault Ignored
+            in
+                handleWithPing parsedMessage receiveUrl
 
-                Err _ ->
-                    text ""
-                        ! []
+
+handleWithPing : Message -> String -> ( Message, Cmd Msg )
+handleWithPing message receiveUrl =
+    case message of
+        Ping content ->
+            Ignored
+                ! [ WebSocket.send receiveUrl <| "PONG " ++ content ]
+
+        rest ->
+            rest
+                ! []
 
 
-spanMessage : String -> Maybe Badges -> Message -> ( Html Msg, Cmd Msg )
-spanMessage receiveUrl mBadges message =
+{-| We return a keyed HTML node so Virtual DOM can render
+these changes efficiently
+-}
+view : String -> Maybe Badges -> Message -> ( String, Html a )
+view receiveUrl mBadges message =
     case message of
         PrivateMessage tags user channel content ->
-            View.viewMessage mBadges tags user content
-                ! []
+            ( takeMessageId tags
+            , View.viewMessage mBadges tags user content
+            )
 
         Resubscription tags channel mContent ->
-            View.viewResub mBadges tags channel mContent
-                ! []
+            ( takeUserId tags
+            , View.viewResub mBadges tags channel mContent
+            )
 
         Subscription channel content ->
-            View.viewSub content
-                ! []
+            ( content
+            , View.viewSub content
+            )
 
         ActionMessage tags user channel content ->
-            View.viewActionMessage mBadges tags user content
-                ! []
+            ( takeMessageId tags
+            , View.viewActionMessage mBadges tags user content
+            )
 
-        Ping content ->
-            text ""
-                ! [ WebSocket.send receiveUrl <| "PONG " ++ content ]
+        SystemMessage content ->
+            ( content
+            , View.viewInfoMessage content
+            )
+
+        _ ->
+            ( ""
+            , text ""
+            )
+
+
+takeMessageId : List Tag -> String
+takeMessageId tags =
+    case tags of
+        [] ->
+            Debug.crash "IRCv3 tags are not enabled or message-id tag is missing."
+
+        (Id mId) :: _ ->
+            mId
+
+        _ :: rest ->
+            takeMessageId rest
+
+
+takeUserId : List Tag -> String
+takeUserId tags =
+    case tags of
+        [] ->
+            Debug.crash "IRCv3 tags are not enabled or user-id tag is missing."
+
+        (UserId mId) :: _ ->
+            toString mId
+
+        _ :: rest ->
+            takeUserId rest

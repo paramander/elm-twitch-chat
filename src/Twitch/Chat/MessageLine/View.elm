@@ -108,6 +108,13 @@ systemMessage tags =
             systemMessage rest
 
 
+viewInfoMessage : String -> Html a
+viewInfoMessage content =
+    div
+        [ class [ Css.Notice, Css.Message ] ]
+        [ text content ]
+
+
 colon : Html a
 colon =
     span
@@ -278,22 +285,6 @@ viewBadges badgeSets badges =
             Broadcaster :: rest ->
                 getBadgeVersion "1" badgeSets.broadcaster
                     :: viewBadges badgeSets rest
-
-
-connectingMessage : Html a
-connectingMessage =
-    div
-        [ class [ Css.Message, Css.Notice ]
-        ]
-        [ text "Connecting to chat room..." ]
-
-
-connectedLine : Html a
-connectedLine =
-    div
-        [ class [ Css.Message, Css.Notice ]
-        ]
-        [ text "Welcome to the chat room!" ]
 
 
 srcset : List String -> Attribute a

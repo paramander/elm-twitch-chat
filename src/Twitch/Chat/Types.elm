@@ -11,9 +11,8 @@ type Message
     | Resubscription (List Tag) Channel (Maybe String)
     | Subscription Channel String
     | Ping String
---   | ServerMessage (Maybe Channel) Int String
---   | JtvCommand Command String
---   | JtvMode User Channel Mode
+    | SystemMessage String
+    | Ignored
 
 
 type Tag
