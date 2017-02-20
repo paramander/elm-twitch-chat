@@ -20,7 +20,7 @@ type Tag
     = Badges (List Badge)
     | BitsTag Int
     | Color (Maybe String)
-    | DisplayName String
+    | DisplayName (Maybe String)
     | Emotes (List Emote)
     | Id String
     | ModTag Bool

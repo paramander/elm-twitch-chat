@@ -138,7 +138,9 @@ chatFrom tags user =
             text user
 
         (DisplayName displayName) :: _ ->
-            text displayName
+            displayName
+                |> Maybe.withDefault user
+                |> text
 
         _ :: rest ->
             chatFrom rest user

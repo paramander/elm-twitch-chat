@@ -59,10 +59,10 @@ rest =
 parse : String -> Result String Message
 parse ircMessage =
     case Combine.parse message ircMessage of
-        Ok (_, _, m) ->
+        Ok ( _, _, m ) ->
             Ok m
 
-        Err (_, stream, ms) ->
+        Err ( _, stream, ms ) ->
             String.join ""
                 [ toString ms
                 , ", "
@@ -260,7 +260,7 @@ displayName : Parser s Tag
 displayName =
     string "display-name"
         *> char '='
-        *> (manyTill anyChar (char ';') <$> String.fromList)
+        *> maybe (manyTill anyChar (char ';') <$> String.fromList)
         <$> DisplayName
 
 
