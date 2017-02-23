@@ -4,11 +4,11 @@ module Twitch.Chat.Chatters exposing (..)
 fetch current users in a channel.
 -}
 
+import Dict exposing (Dict)
 import Http
 import Json.Decode as JD exposing (Decoder, field)
-import String
-import Twitch.Request as Request
 import Task exposing (Task)
+import Twitch.Request as Request
 
 
 type alias Chatter =
@@ -17,7 +17,7 @@ type alias Chatter =
 
 type alias Response =
     { count : Int
-    , chatters : List Chatter
+    , chatters : Dict String (List Chatter)
     }
 
 
@@ -38,16 +38,9 @@ responseDecoder : Decoder Response
 responseDecoder =
     JD.map2 Response
         (field "chatter_count" JD.int)
-    <|
-        field "chatters"
-            (chattersDecoder "moderators"
-                |> JD.andThen (\prev -> JD.map (\staff -> prev ++ staff) (chattersDecoder "staff"))
-                |> JD.andThen (\prev -> JD.map (\admins -> prev ++ admins) (chattersDecoder "admins"))
-                |> JD.andThen (\prev -> JD.map (\globalMods -> prev ++ globalMods) (chattersDecoder "global_mods"))
-                |> JD.andThen (\prev -> JD.map (\viewers -> prev ++ viewers) (chattersDecoder "viewers"))
-            )
+        (field "chatters" (JD.dict chattersDecoder))
 
 
-chattersDecoder : String -> Decoder (List Chatter)
-chattersDecoder key =
-    (field key <| JD.list JD.string)
+chattersDecoder : Decoder (List Chatter)
+chattersDecoder =
+    JD.list JD.string

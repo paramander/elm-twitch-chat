@@ -7,6 +7,7 @@ module Twitch.Chat exposing (Chat, Msg(..), init, update, view, subscriptions)
 @docs Msg, Chat, update, view, subscriptions
 -}
 
+import Dict exposing (Dict)
 import Dom.Scroll as Scroll
 import Html exposing (..)
 import Html.Events
@@ -57,7 +58,7 @@ type alias Chat =
     , userMessage : UserMessage
     , chatMessages : List Message
     , shouldScroll : Bool
-    , chatters : List Chatter
+    , chatters : Dict String (List Chatter)
     }
 
 
@@ -133,7 +134,7 @@ init username oauth channelName =
             , mBadges = Nothing
             , userMessage = userMessage
             , shouldScroll = False
-            , chatters = []
+            , chatters = Dict.empty
             , chatMessages = [ SystemMessage "Connecting to chat room..." ]
             }
     in
@@ -241,7 +242,12 @@ update msg model =
                 { model
                     | mBadges = Just badges
                     , chatters = chatters.chatters
-                    , userMessage = { sendTextModel | chatters = chatters.chatters }
+                    , userMessage =
+                        { sendTextModel
+                            | chatters =
+                                Dict.values chatters.chatters
+                                    |> List.concat
+                        }
                     , chatMessages =
                         List.tail model.chatMessages
                             |> Maybe.withDefault []
