@@ -204,8 +204,7 @@ update msg model =
             in
                 { model
                     | chatMessages =
-                        model.chatMessages
-                            ++ [ message ]
+                        (model.chatMessages ++ [ message ])
                             |> dropMessagesIfNeeded
                 }
                     ! [ Cmd.map ChildMessageLineMsg messageCmd
