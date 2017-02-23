@@ -37,6 +37,8 @@ type Classes
     | Colon
     | Content
     | Notice
+    | TooltipWrapper
+    | EmoteWrapper
     | Emote
     | BalloonWrapper
     | BalloonTooltip
@@ -226,9 +228,10 @@ css =
             , margin2 (px -5) zero
             , border zero
             ]
-        , (.) BalloonWrapper
+        , (.) TooltipWrapper
             [ position relative
-            , property "float" "left"
+            , withClass BalloonWrapper
+                [ property "float" "left" ]
             , hover
                 [ descendants
                     [ (.) BalloonTooltip

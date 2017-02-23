@@ -181,22 +181,28 @@ spanContentWithEmotes len emotes content =
                         , size
                         ]
 
-                emoteHtml =
-                    img
-                        [ src <| emoteSrc "1.0"
-                        , srcset [ emoteSrc "2.0 2x" ]
-                        , class [ Css.Emote ]
-                        ]
-                        []
-
                 preEmoteContent =
                     String.slice 0 (emote.begin - len) content
+
+                emoteContent =
+                    String.slice (emote.begin - len) (emote.end + 1 - len) content
 
                 postEmoteContent =
                     String.dropLeft (emote.end + 1 - len) content
             in
                 [ text preEmoteContent
-                , emoteHtml
+                , span
+                    [ class [ Css.TooltipWrapper, Css.EmoteWrapper ] ]
+                    [ img
+                        [ src <| emoteSrc "1.0"
+                        , srcset [ emoteSrc "2.0 2x" ]
+                        , class [ Css.Emote ]
+                        ]
+                        []
+                    , div
+                        [ class [ Css.BalloonTooltip ] ]
+                        [ text emoteContent ]
+                    ]
                 ]
                     ++ spanContentWithEmotes (len + (String.length content) - (String.length postEmoteContent)) rest postEmoteContent
 
@@ -207,7 +213,7 @@ viewBadges badgeSets badges =
         badgeHtml : BadgeProperties -> Html a
         badgeHtml properties =
             span
-                [ class [ Css.BalloonWrapper ]
+                [ class [ Css.TooltipWrapper, Css.BalloonWrapper ]
                 ]
                 [ img
                     [ class [ Css.BadgeImg ]
