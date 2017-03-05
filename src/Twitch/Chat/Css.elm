@@ -231,7 +231,16 @@ css =
         , (.) TooltipWrapper
             [ position relative
             , withClass BalloonWrapper
-                [ property "float" "left" ]
+                [ property "float" "left"
+                , hover
+                    [ descendants
+                        [ (.) BalloonTooltip
+                            [ after
+                                [ marginLeft (px -3) ]
+                            ]
+                        ]
+                    ]
+                ]
             , hover
                 [ descendants
                     [ (.) BalloonTooltip
@@ -249,7 +258,6 @@ css =
                             [ property "content" "''"
                             , position absolute
                             , left (pct 50)
-                            , marginLeft (px -3)
                             , backgroundColor (hex "#0e0c13")
                             , top (px -3)
                             , borderRadius3 (px 1) zero zero
