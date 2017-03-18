@@ -45,7 +45,7 @@ $ cd elm-twitch-chat
 $ npm install
 ```
 
-If you haven't installed Elm globally yet, make sure to do so 
+If you haven't installed Elm globally yet, make sure to do so
 
 ```
 $ npm install -g elm
@@ -64,11 +64,13 @@ $ ./node_modules/.bin/elm-github-install
 
 You can serve the application locally using Webpack. But first, you are required
 to enter your username, oauth token and the channel you want to connect to into
-`src/Twitch.elm`.
+your `.env` file. Just copy the example, and fill in your credentials:
+
+```
+cp .env.example .env
+```
 
 To get an oauth token, you can use [https://twitchapps.com/tmi](https://twitchapps.com/tmi).
-
-** The application will NOT compile until you do this! **
 
 After inserting your username, oauth token and channel, run the command to serve
 the application on [localhost:8000](http://localhost:8000):

@@ -7,6 +7,7 @@ var HtmlWebpackPlugin = require('html-webpack-plugin');
 var UnminifiedWebpackPlugin = require('unminified-webpack-plugin');
 var Webpack = require('webpack');
 var WebpackMerge = require('webpack-merge');
+var Dotenv = require('dotenv-webpack');
 
 
 var npm_target = process.env.npm_lifecycle_event;
@@ -45,7 +46,11 @@ var common = {
             name: "init",
             minChunks: Infinity
         }),
-        new Webpack.optimize.OccurenceOrderPlugin()
+        new Webpack.optimize.OccurenceOrderPlugin(),
+        new Dotenv({
+          path: './.env',
+          safe: true
+        })
     ],
 
     postcss: [AutoPrefixer({
