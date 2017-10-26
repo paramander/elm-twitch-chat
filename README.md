@@ -30,10 +30,9 @@ WebSockets.
 
 ## JSONP
 
-The recommended way of consuming the Twitch API is JSONP. `elm-http` has no way
+The recommended way of consuming the Twitch API is JSONP. `elm-lang/http` has no way
 of using JSONP. That's why this project includes some Native Elm code to
-solve this. See `src/Jsonp.elm` and `src/Native/Jsonp.js`. It returns a `Task` so
-it will fit in any `elm-http` workflow.
+solve this.
 
 ## Try it out
 
